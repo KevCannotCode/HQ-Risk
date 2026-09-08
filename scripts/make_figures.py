@@ -19,7 +19,7 @@ SURFACE, INK, INK_MUTED, GRID, AXIS = "#fcfcfb", "#0b0b0b", "#898781", "#e1e0d9"
 
 FIGURES = [
     ("s1_poisoning", "s1", "poisoning", "symmetric", "Poisoning rate (fraction of training rows)", "S1 — symmetric label-flip poisoning"),
-    ("s1_poisoning_targeted", "s1", "poisoning", "targeted", "Poisoning rate (fraction of training rows)", "S1 — targeted malignant→benign poisoning"),
+    ("s1_poisoning_targeted", "s1", "poisoning", "targeted", "Poisoning rate (fraction of malignant training rows)", "S1 — targeted malignant→benign poisoning (Breast Cancer)"),
     ("s1_evasion", "s1", "evasion", "fgsm", "FGSM ε (standardised feature units)", "S1 — FGSM evasion on the test set"),
     ("s2_federated", "s2", "byzantine", "label_flip", "Malicious client fraction", "S2 — label-flipping clients, FedAvg (solid IID, dashed non-IID)"),
     ("s2_federated_signflip", "s2", "byzantine", "sign_flip", "Malicious client fraction", "S2 — sign-flipping clients, FedAvg (solid IID, dashed non-IID)"),
@@ -77,7 +77,8 @@ def make_figure(summary: pd.DataFrame, scenario: str, attack: str, attack_mode: 
             series = rows[(rows["dataset"] == dataset) & (rows["partition"] == partition)].sort_values("intensity")
             if not series.empty:
                 plot_series(axes, series, dataset, partition)
-    axes.legend(frameon=False, fontsize=10, labelcolor=INK)
+    if len(axes.get_lines()) > 1:
+        axes.legend(frameon=False, fontsize=10, labelcolor=INK)
     figure.tight_layout()
     return figure
 
