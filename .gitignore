@@ -1,0 +1,6 @@
+# whitelist: only the baseline harness and the one-pager are published
+*
+!.gitignore
+!HQ-Risk-Baselines-OnePager.html
+!hq-risk-baselines/
+!hq-risk-baselines/**
