@@ -3,7 +3,7 @@
 **Written:** 2026-09-07. **Scope:** S1 (classical ML) and S2 (federated learning) baselines and attack sweeps.
 **S3 (quantum):** not run. Blocked on the circuit. Nothing stubbed, nothing guessed.
 
-Every decision below is **an implementer default, not an instruction from Kameni**. Each is one config value or one
+Every decision below is **an implementer default, not an instruction from the project lead**. Each is one config value or one
 constant; reversing any of them is a one-line change followed by a re-run. **Please veto.**
 
 ---
@@ -94,10 +94,10 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 
 | Blocker | Owner | Effect |
 |---|---|---|
-| HPC cluster name, account, scheduler partition, module policy | Kameni | `scripts/submit_hpc.sbatch` has placeholders; everything ran locally instead |
-| Attack success rate for poisoning / federated | Kameni | one column blank on 300 of 375 rows |
-| Whether the formula consumes accuracy drop (circularity) | Kameni | decides whether these numbers can validate the score at all |
-| QML circuit | Kameni | S3 not started |
+| HPC cluster name, account, scheduler partition, module policy | the project lead | `scripts/submit_hpc.sbatch` has placeholders; everything ran locally instead |
+| Attack success rate for poisoning / federated | the project lead | one column blank on 300 of 375 rows |
+| Whether the formula consumes accuracy drop (circularity) | the project lead | decides whether these numbers can validate the score at all |
+| QML circuit | the project lead | S3 not started |
 
 ---
 
@@ -122,7 +122,7 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 | S2 sign-flip clients | Breast Cancer IID | 10 %: −1.8 ± 1.4 pp | 50 %: −70.4 ± 17.3 pp |
 | | Breast Cancer non-IID | 10 %: 0.0 ± 1.1 pp | 50 %: −64.6 ± 39.7 pp |
 
-Kameni's reference-system table with these numbers: `results/summary/kameni_table.md`. Figures: `results/figures/`.
+the project lead's reference-system table with these numbers: `results/summary/reference_table.md`. Figures: `results/figures/`.
 
 ---
 
@@ -130,7 +130,7 @@ Kameni's reference-system table with these numbers: `results/summary/kameni_tabl
 
 1. **Monotonicity holds in every sweep at the level of the mean**, with two within-noise exceptions: Wine symmetric poisoning 40 % (85.6 %) vs 30 % (83.9 %) — Wine's test set is 36 rows, one row is 2.8 pp; and Breast Cancer IID sign-flip 20 % (96.8 %) vs 10 % (95.6 %). Both differences are smaller than their sd.
 2. **Accuracy hides the targeted attack.** At 40 % targeted poisoning, accuracy drops 16 pp but malignant recall falls from 0.94 to 0.48 — half of the malignant test cases are missed. This is the "imbalanced medical data" concern from the context brief, now measured.
-3. **Non-IID federated results are bimodal, not noisy.** Breast Cancer non-IID at 40–50 % malicious clients has sd 0.32–0.47: some seeds keep ~95 % accuracy, others collapse to ~35 %. Cause: with Dirichlet α = 0.5 and 10 clients, shard sizes are very uneven, and D23 makes clients 0…k−1 malicious regardless of size — whether the malicious clients hold most of the data is decided by the partition draw. Mean ± sd is the wrong summary here; `summary.csv` carries min and max. Two options for Kameni: (a) keep as is and report min/max, (b) choose malicious clients by a seeded random draw or by data share — one line in `experiment.py`.
+3. **Non-IID federated results are bimodal, not noisy.** Breast Cancer non-IID at 40–50 % malicious clients has sd 0.32–0.47: some seeds keep ~95 % accuracy, others collapse to ~35 %. Cause: with Dirichlet α = 0.5 and 10 clients, shard sizes are very uneven, and D23 makes clients 0…k−1 malicious regardless of size — whether the malicious clients hold most of the data is decided by the partition draw. Mean ± sd is the wrong summary here; `summary.csv` carries min and max. Two options for the project lead: (a) keep as is and report min/max, (b) choose malicious clients by a seeded random draw or by data share — one line in `experiment.py`.
 4. **Federated attacks below 40 % barely register on IID data** (≤ 3 pp on both datasets). FedAvg weighted by sample count dilutes a minority of label-flipping clients. The interesting region is 40–50 %, which is also where the theoretical guarantees of plain FedAvg end.
 5. **FGSM at ε = 1.0 is total** on every dataset (≥ 94 % ASR). One standard deviation per feature is a very large perturbation for tabular data; ε = 0.1–0.25 is the informative range. Worth asking whether ε = 1.0 is meant to be a ceiling point or a realistic one.
 6. **Federated clean baseline ≈ centralised baseline** (within 1.5 pp on every dataset/partition), so S2 accuracy drops are attributable to the attack, not to federation itself.

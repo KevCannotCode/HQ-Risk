@@ -1,4 +1,4 @@
-"""Fill Kameni's illustrative table with real numbers from summary.csv. HQ-Risk column stays empty -- it is his."""
+"""Fill the project lead's illustrative table with real numbers from summary.csv. HQ-Risk column stays empty -- it is his."""
 
 import argparse
 import sys
@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--summary", default="results/summary/summary.csv")
-    parser.add_argument("--output", default="results/summary/kameni_table.md")
+    parser.add_argument("--output", default="results/summary/reference_table.md")
     parser.add_argument("--dataset", default="breast_cancer")
     parser.add_argument("--poisoning-intensity", type=float, default=0.4)
     parser.add_argument("--evasion-intensity", type=float, default=1.0)

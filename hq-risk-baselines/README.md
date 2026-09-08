@@ -25,12 +25,12 @@ python scripts/run_sweep.py --config configs/s2_federated.yaml
 python scripts/run_sweep.py --config configs/s2_federated_signflip.yaml
 ```
 
-Then aggregate, plot, and fill Kameni's table:
+Then aggregate, plot, and fill the project lead's table:
 
 ```bash
 python scripts/build_summary.py        # results/summary/summary.csv  (mean, sd, min, max, n per configuration)
 python scripts/make_figures.py         # results/figures/*.png
-python scripts/build_kameni_table.py   # results/summary/kameni_table.md
+python scripts/build_reference_table.py   # results/summary/reference_table.md
 ```
 
 One point, for debugging:
@@ -70,8 +70,8 @@ src/
   sweep.py          SweepConfig     YAML -> list of RunConfig
   attacks/          LabelFlipAttack, FgsmAttack, ByzantineBehaviour
   federated/        DataPartitioner, FederatedClient, FederatedServer
-scripts/            run_single, run_sweep, build_summary, make_figures, build_kameni_table, merge_shards, submit_hpc.sbatch
-results/            raw/runs.csv, summary/summary.csv, summary/kameni_table.md, figures/
+scripts/            run_single, run_sweep, build_summary, make_figures, build_reference_table, merge_shards, submit_hpc.sbatch
+results/            raw/runs.csv, summary/summary.csv, summary/reference_table.md, figures/
 notes/METHODS.md    what was run, every decision
 ```
 
