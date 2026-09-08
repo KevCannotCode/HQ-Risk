@@ -77,7 +77,8 @@ def make_figure(summary: pd.DataFrame, scenario: str, attack: str, attack_mode: 
             series = rows[(rows["dataset"] == dataset) & (rows["partition"] == partition)].sort_values("intensity")
             if not series.empty:
                 plot_series(axes, series, dataset, partition)
-    if len(axes.get_lines()) > 1:
+    _, labels = axes.get_legend_handles_labels()
+    if len(labels) > 1:
         axes.legend(frameon=False, fontsize=10, labelcolor=INK)
     figure.tight_layout()
     return figure
