@@ -1,0 +1,16 @@
+scenario: s2
+attack: byzantine
+attack_mode: label_flip
+model: logistic_regression
+datasets: [breast_cancer, digits]
+partitions: [iid, non_iid]
+intensities: [0, 0.1, 0.2, 0.3, 0.4, 0.5]
+seeds: [0, 1, 2, 3, 4]
+federated:
+  n_clients: 10
+  rounds: 30
+  local_epochs: 1
+  learning_rate: 0.3
+  batch_size: 32
+  dirichlet_alpha: 0.5
+output: results/raw/runs.csv
