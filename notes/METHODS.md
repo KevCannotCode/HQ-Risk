@@ -101,6 +101,36 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 
 ---
 
-## 7. Headline numbers
+## 7. Headline numbers (5 seeds, mean ± sd; full table in `results/summary/summary.csv`)
 
-Filled by `results/summary/summary.csv`, `results/summary/kameni_table.md` and `results/figures/`. See §8 below once the sweeps have run.
+**Clean baselines (centralised, S1):** Breast Cancer 97.0 ± 2.0 %, Digits 97.0 ± 0.7 %, Wine 98.9 ± 1.5 %.
+**Clean baselines (federated, S2, 0 malicious):** Breast Cancer IID 97.4 ± 1.4 %, non-IID 96.0 ± 2.5 %; Digits IID 95.9 ± 0.5 %, non-IID 96.4 ± 0.4 %.
+
+| Sweep | Dataset | Weakest point | Strongest point (max intensity) |
+|---|---|---|---|
+| S1 symmetric poisoning | Breast Cancer | 5 %: −1.9 ± 1.9 pp | 40 %: −22.6 ± 2.7 pp |
+| | Digits | 5 %: −4.2 ± 1.5 pp | 40 %: −11.2 ± 0.8 pp |
+| | Wine | 5 %: −1.7 ± 4.2 pp | 40 %: −13.3 ± 6.0 pp (30 %: −15.0 ± 3.2 pp) |
+| S1 targeted poisoning | Breast Cancer | 5 %: −1.9 ± 1.1 pp, malignant recall 0.88 | 40 %: −16.3 ± 2.4 pp, **malignant recall 0.48** (clean 0.94) |
+| S1 FGSM evasion | Breast Cancer | ε 0.1: −7.2 ± 2.6 pp, ASR 7 % | ε 1.0: −90.9 ± 3.4 pp, ASR 94 % |
+| | Digits | ε 0.1: −10.8 ± 1.4 pp, ASR 11 % | ε 1.0: −97.0 ± 0.7 pp, ASR 100 % |
+| | Wine | ε 0.1: −2.2 ± 2.3 pp, ASR 2 % | ε 1.0: −94.4 ± 2.0 pp, ASR 96 % |
+| S2 label-flip clients | Breast Cancer IID | 10 %: −1.4 ± 1.0 pp | 50 %: −44.9 ± 8.5 pp |
+| | Breast Cancer non-IID | 10 %: −1.2 ± 2.8 pp | 50 %: −55.1 ± 33.7 pp |
+| | Digits IID | 10 %: −0.5 ± 0.8 pp | 50 %: −8.2 ± 1.6 pp |
+| | Digits non-IID | 10 %: −0.6 ± 0.5 pp | 50 %: −19.8 ± 8.8 pp |
+| S2 sign-flip clients | Breast Cancer IID | 10 %: −1.8 ± 1.4 pp | 50 %: −70.4 ± 17.3 pp |
+| | Breast Cancer non-IID | 10 %: 0.0 ± 1.1 pp | 50 %: −64.6 ± 39.7 pp |
+
+Kameni's reference-system table with these numbers: `results/summary/kameni_table.md`. Figures: `results/figures/`.
+
+---
+
+## 8. Observations to raise (not conclusions)
+
+1. **Monotonicity holds in every sweep at the level of the mean**, with two within-noise exceptions: Wine symmetric poisoning 40 % (85.6 %) vs 30 % (83.9 %) — Wine's test set is 36 rows, one row is 2.8 pp; and Breast Cancer IID sign-flip 20 % (96.8 %) vs 10 % (95.6 %). Both differences are smaller than their sd.
+2. **Accuracy hides the targeted attack.** At 40 % targeted poisoning, accuracy drops 16 pp but malignant recall falls from 0.94 to 0.48 — half of the malignant test cases are missed. This is the "imbalanced medical data" concern from the context brief, now measured.
+3. **Non-IID federated results are bimodal, not noisy.** Breast Cancer non-IID at 40–50 % malicious clients has sd 0.32–0.47: some seeds keep ~95 % accuracy, others collapse to ~35 %. Cause: with Dirichlet α = 0.5 and 10 clients, shard sizes are very uneven, and D23 makes clients 0…k−1 malicious regardless of size — whether the malicious clients hold most of the data is decided by the partition draw. Mean ± sd is the wrong summary here; `summary.csv` carries min and max. Two options for Kameni: (a) keep as is and report min/max, (b) choose malicious clients by a seeded random draw or by data share — one line in `experiment.py`.
+4. **Federated attacks below 40 % barely register on IID data** (≤ 3 pp on both datasets). FedAvg weighted by sample count dilutes a minority of label-flipping clients. The interesting region is 40–50 %, which is also where the theoretical guarantees of plain FedAvg end.
+5. **FGSM at ε = 1.0 is total** on every dataset (≥ 94 % ASR). One standard deviation per feature is a very large perturbation for tabular data; ε = 0.1–0.25 is the informative range. Worth asking whether ε = 1.0 is meant to be a ceiling point or a realistic one.
+6. **Federated clean baseline ≈ centralised baseline** (within 1.5 pp on every dataset/partition), so S2 accuracy drops are attributable to the attack, not to federation itself.
