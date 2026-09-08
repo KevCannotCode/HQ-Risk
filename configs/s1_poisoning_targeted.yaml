@@ -1,0 +1,8 @@
+scenario: s1
+attack: poisoning
+attack_mode: targeted
+model: logistic_regression
+datasets: [breast_cancer]
+intensities: [0, 0.05, 0.10, 0.20, 0.30, 0.40]
+seeds: [0, 1, 2, 3, 4]
+output: results/raw/runs.csv

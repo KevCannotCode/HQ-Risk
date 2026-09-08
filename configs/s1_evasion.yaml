@@ -1,0 +1,8 @@
+scenario: s1
+attack: evasion
+attack_mode: fgsm
+model: logistic_regression
+datasets: [breast_cancer, digits, wine]
+intensities: [0, 0.1, 0.25, 0.5, 1.0]
+seeds: [0, 1, 2, 3, 4]
+output: results/raw/runs.csv
