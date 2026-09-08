@@ -1,4 +1,7 @@
-"""Training-set label poisoning. Only ever touches the rows it is handed -- the caller passes train, never test."""
+"""Training-set label poisoning. Only ever touches the rows it is handed -- the caller passes train, never test.
+
+Symmetric fraction is of all rows; targeted fraction is of source-class rows, otherwise 40% cannot exist (D26).
+"""
 
 import numpy as np
 
@@ -19,10 +22,9 @@ class LabelFlipAttack:
     def apply(self, y_train: np.ndarray, fraction: float, n_classes: int, rng: np.random.Generator) -> np.ndarray:
         if fraction <= 0:
             return y_train.copy()
-        n_to_flip = int(round(fraction * len(y_train)))
         if self.mode == self.SYMMETRIC:
-            return self._flip_symmetric(y_train, n_to_flip, n_classes, rng)
-        return self._flip_targeted(y_train, n_to_flip, rng)
+            return self._flip_symmetric(y_train, int(round(fraction * len(y_train))), n_classes, rng)
+        return self._flip_targeted(y_train, fraction, rng)
 
     def _flip_symmetric(self, y: np.ndarray, n_to_flip: int, n_classes: int, rng: np.random.Generator) -> np.ndarray:
         poisoned = y.copy()
@@ -31,10 +33,10 @@ class LabelFlipAttack:
         poisoned[rows] = (y[rows] + offsets) % n_classes
         return poisoned
 
-    def _flip_targeted(self, y: np.ndarray, n_to_flip: int, rng: np.random.Generator) -> np.ndarray:
+    def _flip_targeted(self, y: np.ndarray, fraction: float, rng: np.random.Generator) -> np.ndarray:
         poisoned = y.copy()
         candidates = np.flatnonzero(y == self.source_label)
-        n_to_flip = min(n_to_flip, len(candidates))
+        n_to_flip = int(round(fraction * len(candidates)))
         rows = rng.choice(candidates, size=n_to_flip, replace=False)
         poisoned[rows] = self.target_label
         return poisoned
