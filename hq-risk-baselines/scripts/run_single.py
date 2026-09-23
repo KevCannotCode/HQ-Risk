@@ -13,10 +13,10 @@ from src.storage import ResultWriter
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", required=True, choices=[RunConfig.S1, RunConfig.S2])
+    parser.add_argument("--scenario", required=True, choices=[RunConfig.S1, RunConfig.S2, RunConfig.S3])
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--model", default="logistic_regression")
-    parser.add_argument("--attack", required=True, choices=[RunConfig.POISONING, RunConfig.EVASION, RunConfig.BYZANTINE])
+    parser.add_argument("--attack", required=True, choices=[RunConfig.POISONING, RunConfig.EVASION, RunConfig.BYZANTINE, RunConfig.CIRCUIT_TAMPER, RunConfig.SHOT_BIAS, RunConfig.NOISE])
     parser.add_argument("--attack-mode", required=True)
     parser.add_argument("--intensity", type=float, required=True)
     parser.add_argument("--seed", type=int, default=0)
@@ -27,6 +27,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--learning-rate", type=float, default=0.3)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--dirichlet-alpha", type=float, default=0.5)
+    parser.add_argument("--n-qubits", type=int, default=8)
+    parser.add_argument("--shots", type=int, default=256)
+    parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--quantum-learning-rate", type=float, default=0.05)
+    parser.add_argument("--quantum-batch-size", type=int, default=16)
     parser.add_argument("--output", default=None, help="append the row to this CSV; default prints only")
     return parser.parse_args()
 
@@ -43,6 +48,15 @@ def build_config(args: argparse.Namespace) -> RunConfig:
     )
     if args.scenario == RunConfig.S1:
         return RunConfig(**common)
+    if args.scenario == RunConfig.S3:
+        return RunConfig(
+            **common,
+            learning_rate=args.quantum_learning_rate,
+            batch_size=args.quantum_batch_size,
+            n_qubits=args.n_qubits,
+            shots=args.shots,
+            epochs=args.epochs,
+        )
     return RunConfig(
         **common,
         n_clients=args.n_clients,
