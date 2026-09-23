@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HQ-Risk Results Explorer</title>
+<meta name="description" content="Interactive view of the HQ-Risk S1 (classical ML), S2 (federated) and S3 (QML) baseline and attack sweeps.">
+<style>
+:root {
+  color-scheme: light;
+  --surface-0: #f4f3ef;
+  --surface-1: #fcfcfb;
+  --border: #e1e0d9;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #6f6e69;
+  --accent: #2a78d6;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --bar: #2a78d6;
+  --bar-track: #ecebe6;
+  --baseline: #0b0b0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-0: #111110;
+    --surface-1: #1a1a19;
+    --border: #2f2f2d;
+    --grid: #2f2f2d;
+    --axis: #4a4a46;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #a3a29b;
+    --accent: #3987e5;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --bar: #3987e5;
+    --bar-track: #262624;
+    --baseline: #ffffff;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-0: #111110;
+  --surface-1: #1a1a19;
+  --border: #2f2f2d;
+  --grid: #2f2f2d;
+  --axis: #4a4a46;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #a3a29b;
+  --accent: #3987e5;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --bar: #3987e5;
+  --bar-track: #262624;
+  --baseline: #ffffff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 20px; }
+h1 { font-size: 24px; line-height: 1.2; margin: 0 0 6px; }
+h2 { font-size: 18px; margin: 0 0 4px; }
+p { margin: 0; }
+.lede { color: var(--text-secondary); max-width: 68ch; }
+.muted { color: var(--text-muted); font-size: 13px; }
+a { color: var(--accent); }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-top: 20px; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; margin: 14px 0 10px; }
+label.field { max-width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+select, button {
+  font: inherit; font-size: 14px; color: var(--text-primary);
+  background: var(--surface-1); border: 1px solid var(--axis); border-radius: 6px; padding: 6px 10px;
+}
+select { max-width: 100%; }
+button { cursor: pointer; }
+button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; }
+.chip .key { width: 14px; height: 2px; border-radius: 1px; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-secondary); }
+.note { background: var(--surface-0); border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--text-secondary); margin: 6px 0 2px; }
+.legend span { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.chart-wrap { position: relative; }
+svg { display: block; width: 100%; overflow: visible; }
+.tooltip {
+  position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+  min-width: 190px; display: none; z-index: 2;
+}
+.tooltip .t-head { color: var(--text-muted); margin-bottom: 4px; }
+.tooltip .t-row { display: grid; grid-template-columns: 14px auto 1fr; gap: 8px; align-items: center; }
+.tooltip .t-row strong { font-variant-numeric: tabular-nums; }
+.tooltip .t-row .t-name { color: var(--text-secondary); }
+details { margin-top: 12px; }
+summary { cursor: pointer; color: var(--text-secondary); font-size: 14px; }
+.table-scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th { color: var(--text-secondary); font-weight: 600; }
+.sys-group { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 16px 0 4px; }
+.sys-row { display: grid; grid-template-columns: minmax(150px, 1.1fr) minmax(140px, 1fr) minmax(160px, 2fr); gap: 6px 16px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.sys-row > * { min-width: 0; }
+.sys-name { font-weight: 600; font-size: 14px; }
+.sys-name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 12px; }
+.sys-slider { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--text-secondary); }
+.sys-slider input { width: 100%; accent-color: var(--accent); }
+.bar-cell { display: flex; align-items: center; gap: 10px; }
+.bar-track { position: relative; flex: 1; height: 14px; background: var(--bar-track); border-radius: 4px; }
+.bar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar); border-radius: 0 4px 4px 0; }
+.bar-whisker { position: absolute; top: 6px; height: 2px; background: var(--text-primary); opacity: .55; }
+.bar-clean { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--baseline); }
+.bar-value { min-width: 108px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.bar-value strong { font-size: 14px; }
+.unavailable { color: var(--text-muted); font-size: 13px; font-style: italic; }
+footer { margin-top: 28px; }
+@media (max-width: 720px) {
+  header { flex-direction: column; }
+  .sys-row { grid-template-columns: 1fr; }
+  .bar-value { min-width: 92px; }
+  label.field, select { width: 100%; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>HQ-Risk Results Explorer</h1>
+      <p class="lede">Clean baselines and attack sweeps for the three HQ-Risk scenarios: S1 classical ML, S2 federated learning, S3 QML (the QuantumNet circuit trained with Adam, evaluated on Qiskit Aer at 256 shots). Every point is 5 seeds.</p>
+      <p class="muted" id="provenance"></p>
+    </div>
+    <button id="theme" type="button" aria-label="Toggle light or dark theme">Theme</button>
+  </header>
+
+  <section class="card" aria-labelledby="sweep-title">
+    <h2 id="sweep-title">Attack sweeps</h2>
+    <p class="muted">Pick a sweep and a metric. Hover the chart for exact values; the table below the chart has every number.</p>
+    <div class="controls">
+      <label class="field">Sweep<select id="sweep"></select></label>
+      <label class="field">Metric<select id="metric"></select></label>
+      <div class="field" style="font-size:12px;color:var(--text-secondary);font-weight:600">Datasets<div class="chips" id="datasets"></div></div>
+      <label class="check"><input type="checkbox" id="seeds"> Show individual seeds</label>
+    </div>
+    <p class="note" id="sweep-note"></p>
+    <div class="legend" id="legend"></div>
+    <div class="chart-wrap" id="chart-wrap">
+      <svg id="chart" role="img" aria-labelledby="chart-desc"><desc id="chart-desc"></desc></svg>
+      <div class="tooltip" id="tooltip" role="status"></div>
+    </div>
+    <details>
+      <summary>Table view</summary>
+      <div class="table-scroll"><table id="sweep-table"></table></div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="ref-title">
+    <h2 id="ref-title">Reference systems</h2>
+    <p class="muted">The proposal's four systems plus the added ones. Drag a slider to change that attack's strength. The vertical tick on each bar is that scenario's clean baseline.</p>
+    <div class="controls">
+      <label class="field">Dataset<select id="ref-dataset"></select></label>
+      <label class="field">Metric<select id="ref-metric"></select></label>
+      <label class="field">FL partition<select id="ref-partition"><option value="iid">IID</option><option value="non_iid">non-IID</option></select></label>
+    </div>
+    <div id="systems"></div>
+  </section>
+
+  <footer class="muted">
+    <p>Code, raw runs and every modelling decision (D1–D40): <a href="https://github.com/KevCannotCode/HQ-Risk">github.com/KevCannotCode/HQ-Risk</a> — see <code>hq-risk-baselines/notes/METHODS.md</code>. The HQ-Risk score itself is not computed here.</p>
+  </footer>
+</main>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+const DATA = window.HQ_DATA;
+
+const pct = v => `${Math.round(v * 100)}%`;
+const SWEEPS = [
+  { id: "s1_poisoning", scenario: "s1", attack: "poisoning", mode: "symmetric", label: "S1 · Label-flip poisoning (symmetric)", x: "Poisoning rate (fraction of training rows)", fx: pct,
+    note: "A fraction of training labels is flipped to a random other class before training. Model: logistic regression." },
+  { id: "s1_poisoning_targeted", scenario: "s1", attack: "poisoning", mode: "targeted", label: "S1 · Targeted poisoning (malignant → benign)", x: "Fraction of malignant training rows flipped", fx: pct,
+    note: "Malignant training rows are relabelled benign (Breast Cancer only). Watch malignant recall, not accuracy." },
+  { id: "s1_evasion", scenario: "s1", attack: "evasion", mode: "fgsm", label: "S1 · FGSM evasion", x: "FGSM ε (standardised feature units)", fx: v => `ε ${v}`,
+    note: "White-box FGSM perturbs each test row by ε per feature (features are standardised, so ε = 1 is one standard deviation)." },
+  { id: "s2_federated", scenario: "s2", attack: "byzantine", mode: "label_flip", label: "S2 · Malicious FL clients (label flip)", x: "Malicious client fraction (of 10 clients)", fx: pct,
+    note: "FedAvg over 10 clients, 30 rounds. Malicious clients train on fully flipped labels. Solid = IID data, dashed = non-IID (Dirichlet α 0.5)." },
+  { id: "s2_federated_signflip", scenario: "s2", attack: "byzantine", mode: "sign_flip", label: "S2 · Malicious FL clients (sign flip)", x: "Malicious client fraction (of 10 clients)", fx: pct,
+    note: "Malicious clients send the negated model update. Solid = IID, dashed = non-IID." },
+  { id: "s3_circuit_tamper", scenario: "s3", attack: "circuit_tamper", mode: "rx_half_pi", label: "S3 · Circuit tampering", x: "Injected RX(π/2) gates", fx: v => `${v} gates`,
+    note: "Extra RX(π/2) gates are inserted at random positions and qubits of the trained QuantumNet circuit before it runs on Aer. Large spread: the damage depends on where the gate lands." },
+  { id: "s3_shot_bias", scenario: "s3", attack: "shot_bias", mode: "forged_bitstring", label: "S3 · Shot manipulation", x: "Fraction of each circuit's 256 shots forged", fx: pct,
+    note: "The attacker controls the returned counts and replaces a fraction of shots with the bitstring the model reads as most benign (class 0 for Wine)." },
+  { id: "s3_noise", scenario: "s3", attack: "noise", mode: "depolarizing_readout", label: "S3 · Noise increase", x: "Depolarizing + readout error probability p", fx: v => `p ${v}`,
+    note: "Depolarizing error p on every gate plus readout bit-flip p, simulated on Aer." },
+];
+const METRICS = [
+  { id: "attacked_accuracy", label: "Accuracy under attack", unit: "frac" },
+  { id: "accuracy_drop_pp", label: "Accuracy drop (percentage points)", unit: "pp" },
+  { id: "attack_success_rate", label: "Attack success rate", unit: "frac" },
+  { id: "positive_recall", label: "Malignant recall (macro recall for Wine/Digits)", unit: "frac" },
+  { id: "balanced_accuracy", label: "Balanced accuracy", unit: "frac" },
+  { id: "f1", label: "F1 (malignant; macro for Wine/Digits)", unit: "frac" },
+];
+const DATASETS = [
+  { id: "breast_cancer", label: "Breast Cancer", color: "--series-1" },
+  { id: "digits", label: "Digits", color: "--series-2" },
+  { id: "wine", label: "Wine", color: "--series-3" },
+];
+const PARTITIONS = { "-": { label: "", dash: "" }, iid: { label: "IID", dash: "" }, non_iid: { label: "non-IID", dash: "6 4" } };
+const SVGNS = "http://www.w3.org/2000/svg";
+
+const state = { sweep: SWEEPS[0].id, metric: METRICS[0].id, hidden: new Set(), seeds: false };
+
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function el(tag, attrs = {}, text) {
+  const node = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function html(tag, props = {}, text) {
+  const node = document.createElement(tag);
+  Object.assign(node, props);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function metricInfo(id) { return METRICS.find(m => m.id === id); }
+function fmt(v, unit) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  return unit === "pp" ? `${v.toFixed(1)} pp` : `${(v * 100).toFixed(1)}%`;
+}
+function sweepRows(sweep) {
+  return DATA.summary.filter(r => r.scenario === sweep.scenario && r.attack === sweep.attack && r.attack_mode === sweep.mode);
+}
+
+function seriesFor(sweep, metric) {
+  const rows = sweepRows(sweep);
+  const groups = new Map();
+  for (const r of rows) {
+    const key = `${r.dataset}|${r.partition}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+  const series = [];
+  for (const ds of DATASETS) {
+    for (const part of Object.keys(PARTITIONS)) {
+      const pts = groups.get(`${ds.id}|${part}`);
+      if (!pts) continue;
+      pts.sort((a, b) => a.intensity - b.intensity);
+      const name = PARTITIONS[part].label ? `${ds.label} ${PARTITIONS[part].label}` : ds.label;
+      const runs = DATA.runs.filter(r => r.scenario === sweep.scenario && r.attack === sweep.attack && r.attack_mode === sweep.mode && r.dataset === ds.id && (r.partition ?? "-") === part);
+      series.push({
+        key: `${ds.id}|${part}`, dataset: ds.id, name, color: css(ds.color), dash: PARTITIONS[part].dash,
+        points: pts.map(p => ({ x: p.intensity, mean: p[`${metric}_mean`], sd: p[`${metric}_std`], min: p[`${metric}_min`], max: p[`${metric}_max`], n: p.n })),
+        seeds: runs.map(r => ({ x: r.intensity, y: r[metric], seed: r.seed })).filter(s => s.y !== null),
+      });
+    }
+  }
+  return series;
+}
+
+function niceTicks(lo, hi, count = 5) {
+  const span = hi - lo || 1;
+  const step0 = span / count;
+  const mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= count) || 10 * mag;
+  const ticks = [];
+  for (let t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) ticks.push(+t.toFixed(10));
+  return ticks;
+}
+
+function renderSweep() {
+  const sweep = SWEEPS.find(s => s.id === state.sweep);
+  const metric = metricInfo(state.metric);
+  const all = seriesFor(sweep, state.metric);
+  const shown = all.filter(s => !state.hidden.has(s.dataset));
+
+  document.getElementById("sweep-note").textContent = sweep.note;
+  renderDatasetChips(all);
+  renderLegend(shown);
+  renderTable(sweep, metric, shown);
+
+  const svg = document.getElementById("chart");
+  const wrap = document.getElementById("chart-wrap");
+  const width = wrap.clientWidth;
+  const narrow = width < 560;
+  const height = narrow ? 300 : 380;
+  const m = { top: 12, right: narrow ? 16 : 150, bottom: 48, left: 56 };
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("height", height);
+  svg.replaceChildren(svg.querySelector("desc"));
+  document.getElementById("chart-desc").textContent = `${metric.label} versus ${sweep.x} for ${sweep.label}.`;
+
+  const xs = [...new Set(all.flatMap(s => s.points.map(p => p.x)))].sort((a, b) => a - b);
+  const values = shown.flatMap(s => s.points.flatMap(p => [p.mean - (p.sd || 0), p.mean + (p.sd || 0)]).concat(state.seeds ? s.seeds.map(d => d.y) : [])).filter(v => v !== null && !Number.isNaN(v));
+  let lo = metric.unit === "pp" ? Math.min(0, ...values) : 0;
+  let hi = metric.unit === "pp" ? Math.max(10, ...values) : 1;
+  const yTicks = niceTicks(lo, hi);
+  lo = Math.min(lo, yTicks[0]); hi = Math.max(hi, yTicks[yTicks.length - 1]);
+  const X = v => m.left + (v - xs[0]) / ((xs[xs.length - 1] - xs[0]) || 1) * (width - m.left - m.right);
+  const Y = v => m.top + (1 - (v - lo) / (hi - lo)) * (height - m.top - m.bottom);
+  const tickLabel = v => metric.unit === "pp" ? `${v}` : `${Math.round(v * 100)}%`;
+
+  for (const t of yTicks) {
+    svg.append(el("line", { x1: m.left, x2: width - m.right, y1: Y(t), y2: Y(t), stroke: css("--grid"), "stroke-width": 1 }));
+    svg.append(el("text", { x: m.left - 8, y: Y(t) + 4, "text-anchor": "end", "font-size": 12, fill: css("--text-muted") }, tickLabel(t)));
+  }
+  svg.append(el("line", { x1: m.left, x2: width - m.right, y1: height - m.bottom, y2: height - m.bottom, stroke: css("--axis") }));
+  const xTickEvery = narrow && xs.length > 5 ? 2 : 1;
+  xs.forEach((x, i) => {
+    if (i % xTickEvery && i !== xs.length - 1) return;
+    svg.append(el("text", { x: X(x), y: height - m.bottom + 18, "text-anchor": "middle", "font-size": 12, fill: css("--text-muted") }, String(x)));
+  });
+  svg.append(el("text", { x: m.left + (width - m.left - m.right) / 2, y: height - 8, "text-anchor": "middle", "font-size": 13, fill: css("--text-secondary") }, sweep.x));
+  svg.append(el("text", { x: 14, y: m.top + (height - m.top - m.bottom) / 2, "text-anchor": "middle", "font-size": 13, fill: css("--text-secondary"), transform: `rotate(-90 14 ${m.top + (height - m.top - m.bottom) / 2})` }, metric.unit === "pp" ? "Drop (pp)" : "Mean ± sd"));
+
+  const surface = css("--surface-1");
+  if (state.seeds) {
+    for (const s of shown) {
+      s.seeds.forEach(d => {
+        const jitter = ((d.seed - 2) * 3) * (s.dash ? -1 : 1);
+        svg.append(el("circle", { cx: X(d.x) + jitter, cy: Y(d.y), r: 2.5, fill: s.color, opacity: 0.45 }));
+      });
+    }
+  }
+  for (const s of shown) {
+    const pts = s.points.filter(p => p.mean !== null);
+    for (const p of pts) {
+      if (!p.sd) continue;
+      const x = X(p.x);
+      svg.append(el("line", { x1: x, x2: x, y1: Y(p.mean - p.sd), y2: Y(p.mean + p.sd), stroke: s.color, "stroke-width": 1.5, opacity: 0.7 }));
+      for (const y of [p.mean - p.sd, p.mean + p.sd]) svg.append(el("line", { x1: x - 4, x2: x + 4, y1: Y(y), y2: Y(y), stroke: s.color, "stroke-width": 1.5, opacity: 0.7 }));
+    }
+    svg.append(el("path", { d: pts.map((p, i) => `${i ? "L" : "M"}${X(p.x)},${Y(p.mean)}`).join(""), fill: "none", stroke: s.color, "stroke-width": 2, "stroke-dasharray": s.dash, "stroke-linejoin": "round" }));
+    for (const p of pts) svg.append(el("circle", { cx: X(p.x), cy: Y(p.mean), r: 4, fill: s.color, stroke: surface, "stroke-width": 2 }));
+  }
+
+  if (!narrow) {
+    const labels = shown.map(s => {
+      const last = s.points.filter(p => p.mean !== null).at(-1);
+      return last ? { s, y: Y(last.mean), x: X(last.x) } : null;
+    }).filter(Boolean).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 16) labels[i].y = labels[i - 1].y + 16;
+    for (const l of labels) {
+      svg.append(el("line", { x1: l.x + 8, x2: l.x + 20, y1: l.y, y2: l.y, stroke: l.s.color, "stroke-width": 2, "stroke-dasharray": l.s.dash ? "3 2" : "" }));
+      svg.append(el("text", { x: l.x + 24, y: l.y + 4, "font-size": 12, fill: css("--text-secondary") }, l.s.name));
+    }
+  }
+
+  const cross = el("line", { y1: m.top, y2: height - m.bottom, stroke: css("--text-muted"), "stroke-width": 1, visibility: "hidden" });
+  svg.append(cross);
+  const hit = el("rect", { x: m.left - 12, y: m.top, width: width - m.left - m.right + 24, height: height - m.top - m.bottom, fill: "transparent", tabindex: 0 });
+  svg.append(hit);
+  const tip = document.getElementById("tooltip");
+  const show = x => {
+    cross.setAttribute("x1", X(x)); cross.setAttribute("x2", X(x)); cross.setAttribute("visibility", "visible");
+    tip.replaceChildren(html("div", { className: "t-head" }, sweep.fx(x)));
+    for (const s of shown) {
+      const p = s.points.find(q => q.x === x);
+      if (!p) continue;
+      const row = html("div", { className: "t-row" });
+      const key = html("span"); key.style.cssText = `height:2px;background:${s.color}`;
+      const range = p.min !== null && p.min !== undefined ? ` · ${fmt(p.min, metric.unit)}–${fmt(p.max, metric.unit)}` : "";
+      row.append(key, html("strong", {}, `${fmt(p.mean, metric.unit)} ± ${fmt(p.sd, metric.unit)}`), html("span", { className: "t-name" }, `${s.name}${range}`));
+      tip.append(row);
+    }
+    tip.style.display = "block";
+    const left = Math.min(Math.max(X(x) + 12, 0), width - tip.offsetWidth);
+    tip.style.left = `${X(x) + 12 + tip.offsetWidth > width ? X(x) - tip.offsetWidth - 12 : left}px`;
+    tip.style.top = `${m.top}px`;
+  };
+  const nearest = px => xs.reduce((best, x) => Math.abs(X(x) - px) < Math.abs(X(best) - px) ? x : best, xs[0]);
+  hit.addEventListener("pointermove", e => {
+    const box = svg.getBoundingClientRect();
+    show(nearest((e.clientX - box.left) * (width / box.width)));
+  });
+  let focusIndex = 0;
+  hit.addEventListener("focus", () => show(xs[focusIndex]));
+  hit.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") focusIndex = Math.min(xs.length - 1, focusIndex + 1);
+    else if (e.key === "ArrowLeft") focusIndex = Math.max(0, focusIndex - 1);
+    else return;
+    e.preventDefault(); show(xs[focusIndex]);
+  });
+  const hide = () => { tip.style.display = "none"; cross.setAttribute("visibility", "hidden"); };
+  hit.addEventListener("pointerleave", hide);
+  hit.addEventListener("blur", hide);
+}
+
+function renderDatasetChips(all) {
+  const box = document.getElementById("datasets");
+  box.replaceChildren();
+  const present = DATASETS.filter(d => all.some(s => s.dataset === d.id));
+  for (const d of present) {
+    const b = html("button", { type: "button", className: "chip" });
+    b.setAttribute("aria-pressed", String(!state.hidden.has(d.id)));
+    const key = html("span", { className: "key" }); key.style.background = css(d.color);
+    b.append(key, document.createTextNode(d.label));
+    b.addEventListener("click", () => {
+      if (state.hidden.has(d.id)) state.hidden.delete(d.id);
+      else if (present.filter(p => !state.hidden.has(p.id)).length > 1) state.hidden.add(d.id);
+      renderSweep();
+    });
+    box.append(b);
+  }
+}
+
+function renderLegend(shown) {
+  const box = document.getElementById("legend");
+  box.replaceChildren();
+  if (shown.length < 2) return;
+  for (const s of shown) {
+    const item = html("span");
+    const key = el("svg", { width: 18, height: 6, "aria-hidden": "true" });
+    key.append(el("line", { x1: 0, x2: 18, y1: 3, y2: 3, stroke: s.color, "stroke-width": 2, "stroke-dasharray": s.dash ? "4 3" : "" }));
+    item.append(key, document.createTextNode(s.name));
+    box.append(item);
+  }
+}
+
+function renderTable(sweep, metric, shown) {
+  const table = document.getElementById("sweep-table");
+  table.replaceChildren();
+  const head = html("tr");
+  for (const h of ["Series", "Intensity", "Mean", "SD", "Min", "Max", "Seeds"]) head.append(html("th", {}, h));
+  table.append(head);
+  for (const s of shown) for (const p of s.points) {
+    const tr = html("tr");
+    for (const v of [s.name, sweep.fx(p.x), fmt(p.mean, metric.unit), fmt(p.sd, metric.unit), fmt(p.min, metric.unit), fmt(p.max, metric.unit), String(p.n)]) tr.append(html("td", {}, v));
+    table.append(tr);
+  }
+}
+
+// ---------- Reference systems ----------
+const SYSTEMS = [
+  { group: "S1 · Classical ML", label: "Clean ML", sub: "logistic regression, no attack", sweep: "s1_poisoning", fixed: 0 },
+  { group: "S1 · Classical ML", label: "Poisoned ML", sub: "symmetric label flip", sweep: "s1_poisoning", start: 0.4 },
+  { group: "S1 · Classical ML", label: "Targeted poisoning", sub: "malignant → benign", sweep: "s1_poisoning_targeted", start: 0.4 },
+  { group: "S1 · Classical ML", label: "Evaded ML", sub: "FGSM", sweep: "s1_evasion", start: 1 },
+  { group: "S2 · Federated", label: "Malicious FL", sub: "label-flipping clients", sweep: "s2_federated", start: 0.5 },
+  { group: "S2 · Federated", label: "Malicious FL", sub: "sign-flipping clients", sweep: "s2_federated_signflip", start: 0.5 },
+  { group: "S3 · QML", label: "Clean QML", sub: "QuantumNet + Adam, Aer 256 shots", sweep: "s3_circuit_tamper", fixed: 0 },
+  { group: "S3 · QML", label: "Tampered QML", sub: "injected RX(π/2) gates", sweep: "s3_circuit_tamper", start: 16 },
+  { group: "S3 · QML", label: "Shot-biased QML", sub: "forged shots", sweep: "s3_shot_bias", start: 0.4 },
+  { group: "S3 · QML", label: "Noisy QML", sub: "depolarizing + readout", sweep: "s3_noise", start: 0.1 },
+];
+const REF_METRICS = METRICS.filter(m => m.id !== "f1");
+const refState = { dataset: "breast_cancer", metric: "attacked_accuracy", partition: "iid", chosen: SYSTEMS.map(s => s.fixed ?? s.start) };
+
+function refRows(system) {
+  const sweep = SWEEPS.find(s => s.id === system.sweep);
+  return sweepRows(sweep)
+    .filter(r => r.dataset === refState.dataset && (sweep.scenario !== "s2" || r.partition === refState.partition))
+    .sort((a, b) => a.intensity - b.intensity);
+}
+
+function renderSystems() {
+  const metric = metricInfo(refState.metric);
+  const box = document.getElementById("systems");
+  box.replaceChildren();
+  const all = SYSTEMS.map(refRows).flat().map(r => r[`${metric.id}_mean`]).filter(v => v !== null);
+  const max = metric.unit === "pp" ? Math.max(100, ...all) : 1;
+  let group = "";
+  SYSTEMS.forEach((system, i) => {
+    if (system.group !== group) { group = system.group; box.append(html("div", { className: "sys-group" }, group)); }
+    const sweep = SWEEPS.find(s => s.id === system.sweep);
+    const rows = refRows(system);
+    const row = html("div", { className: "sys-row" });
+    const name = html("div", { className: "sys-name" }, system.label);
+    name.append(html("small", {}, system.sub));
+    row.append(name);
+    if (!rows.length) {
+      row.append(html("div"), html("div", { className: "unavailable" }, "Not run for this dataset"));
+      box.append(row);
+      return;
+    }
+    const levels = rows.map(r => r.intensity).filter(v => system.fixed === undefined ? v > 0 : v === system.fixed);
+    if (!levels.includes(refState.chosen[i])) refState.chosen[i] = levels.includes(system.start) ? system.start : levels.at(-1);
+    const slider = html("label", { className: "sys-slider" });
+    const readout = html("span", {}, system.fixed !== undefined ? "no attack" : `${sweep.fx(refState.chosen[i])}`);
+    slider.append(readout);
+    if (system.fixed === undefined) {
+      const input = html("input", { type: "range", min: 0, max: levels.length - 1, step: 1, value: levels.indexOf(refState.chosen[i]) });
+      input.setAttribute("aria-label", `${system.label} (${system.sub}) attack strength`);
+      input.id = `system-${i}`;
+      input.addEventListener("input", () => { refState.chosen[i] = levels[+input.value]; renderSystems(); document.getElementById(`system-${i}`).focus(); });
+      slider.append(input);
+    }
+    row.append(slider);
+
+    const point = rows.find(r => r.intensity === refState.chosen[i]);
+    const clean = rows.find(r => r.intensity === 0);
+    const mean = point[`${metric.id}_mean`], sd = point[`${metric.id}_std`] || 0;
+    const cell = html("div", { className: "bar-cell" });
+    const track = html("div", { className: "bar-track" });
+    const scale = v => `${Math.max(0, Math.min(100, (v / max) * 100))}%`;
+    if (mean !== null) {
+      const fill = html("div", { className: "bar-fill" }); fill.style.width = scale(mean);
+      const whisker = html("div", { className: "bar-whisker" });
+      whisker.style.left = scale(mean - sd); whisker.style.width = `calc(${scale(mean + sd)} - ${scale(mean - sd)})`;
+      track.append(fill, whisker);
+    }
+    const cleanValue = clean && clean[`${metric.id}_mean`];
+    if (cleanValue !== null && cleanValue !== undefined && metric.unit !== "pp") {
+      const tick = html("div", { className: "bar-clean" }); tick.style.left = `calc(${scale(cleanValue)} - 1px)`;
+      tick.title = `Clean baseline ${fmt(cleanValue, metric.unit)}`;
+      track.append(tick);
+    }
+    track.title = `${system.label}: ${fmt(mean, metric.unit)} ± ${fmt(sd, metric.unit)}`;
+    const value = html("div", { className: "bar-value" });
+    value.append(html("strong", {}, fmt(mean, metric.unit)));
+    value.append(document.createTextNode(mean === null ? " undefined" : ` ± ${fmt(sd, metric.unit)}`));
+    cell.append(track, value);
+    row.append(cell);
+    box.append(row);
+  });
+}
+
+// ---------- wiring ----------
+function fill(select, items, value) {
+  select.replaceChildren(...items.map(i => { const o = html("option", { value: i.id }, i.label); return o; }));
+  select.value = value;
+}
+fill(document.getElementById("sweep"), SWEEPS, state.sweep);
+fill(document.getElementById("metric"), METRICS, state.metric);
+fill(document.getElementById("ref-dataset"), DATASETS, refState.dataset);
+fill(document.getElementById("ref-metric"), REF_METRICS, refState.metric);
+document.getElementById("sweep").addEventListener("change", e => { state.sweep = e.target.value; state.hidden.clear(); renderSweep(); });
+document.getElementById("metric").addEventListener("change", e => { state.metric = e.target.value; renderSweep(); });
+document.getElementById("seeds").addEventListener("change", e => { state.seeds = e.target.checked; renderSweep(); });
+document.getElementById("ref-dataset").addEventListener("change", e => { refState.dataset = e.target.value; renderSystems(); });
+document.getElementById("ref-metric").addEventListener("change", e => { refState.metric = e.target.value; renderSystems(); });
+document.getElementById("ref-partition").addEventListener("change", e => { refState.partition = e.target.value; renderSystems(); });
+document.getElementById("provenance").textContent = `${DATA.runs.length} runs · ${DATA.summary.length} configurations · code commit ${DATA.commit}`;
+
+document.getElementById("theme").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("hq-theme", root.dataset.theme); } catch (_) {}
+  renderSweep(); renderSystems();
+});
+try { const saved = localStorage.getItem("hq-theme"); if (saved) document.documentElement.dataset.theme = saved; } catch (_) {}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderSweep(); renderSystems(); });
+let resizeTimer;
+addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderSweep, 120); });
+renderSweep();
+renderSystems();
+</script>
+</body>
+</html>
