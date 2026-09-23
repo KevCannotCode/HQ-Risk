@@ -1,8 +1,8 @@
 # hq-risk-baselines
 
-Clean baselines and attack sweeps for HQ-Risk scenarios **S1 (classical ML)** and **S2 (federated learning)**.
+Clean baselines and attack sweeps for HQ-Risk scenarios **S1 (classical ML)**, **S2 (federated learning)** and **S3 (QML)**.
 Reproducible, multi-seed, config-driven, runnable unattended on an HPC cluster.
-S3 (quantum) is out of scope until the circuit is supplied.
+S3 uses the project lead's `QuantumNet` Qiskit circuit, trained with Adam, evaluated on Qiskit Aer with shots.
 
 Context: `../HQ-Risk-CONTEXT.md`. Task spec: `../HQ-Risk-TASK-S1-S2.md`. What was run and every assumption: `notes/METHODS.md`.
 
@@ -23,6 +23,10 @@ python scripts/run_sweep.py --config configs/s1_poisoning_targeted.yaml
 python scripts/run_sweep.py --config configs/s1_evasion.yaml
 python scripts/run_sweep.py --config configs/s2_federated.yaml
 python scripts/run_sweep.py --config configs/s2_federated_signflip.yaml
+python scripts/run_sweep.py --config configs/s3_circuit_tamper.yaml
+python scripts/run_sweep.py --config configs/s3_shot_bias.yaml
+python scripts/run_sweep.py --config configs/s3_noise.yaml
+python scripts/verify_quantum.py          # torch simulator == Qiskit Statevector, training reproducible
 ```
 
 Then aggregate, plot, and fill the project lead's table:
@@ -38,6 +42,7 @@ One point, for debugging:
 ```bash
 python scripts/run_single.py --scenario s1 --dataset breast_cancer --attack poisoning --attack-mode symmetric --intensity 0.2 --seed 0
 python scripts/run_single.py --scenario s2 --dataset digits --attack byzantine --attack-mode label_flip --intensity 0.3 --partition non_iid --seed 0
+python scripts/run_single.py --scenario s3 --dataset breast_cancer --model quantum_net --attack shot_bias --attack-mode forged_bitstring --intensity 0.2 --seed 0
 ```
 
 `--dry-run` on `run_sweep.py` lists the runs without executing them.
@@ -55,7 +60,7 @@ Cluster name, partition, account and module loads are unknown; the sbatch file h
 ## Changing an experiment
 
 Every knob is a YAML value in `configs/`. Adding an intensity, a seed, or a dataset is a YAML edit, not a Python edit.
-Every implementer default (D1–D30) is a single value and listed in `notes/METHODS.md` for veto.
+Every implementer default (D1–D40) is a single value and listed in `notes/METHODS.md` for veto.
 
 ## Layout
 
@@ -68,9 +73,11 @@ src/
   storage.py        ResultWriter    append-only CSV, fixed schema
   experiment.py     ExperimentRunner, RunConfig   one configuration -> one row
   sweep.py          SweepConfig     YAML -> list of RunConfig
-  attacks/          LabelFlipAttack, FgsmAttack, ByzantineBehaviour
+  attacks/          LabelFlipAttack, FgsmAttack, ByzantineBehaviour, CircuitTamperAttack, ShotBiasAttack, BackendNoiseAttack
   federated/        DataPartitioner, FederatedClient, FederatedServer
-scripts/            run_single, run_sweep, build_summary, make_figures, build_reference_table, merge_shards, submit_hpc.sbatch
+  quantum/          QuantumNet (the circuit), TorchStatevector (exact gradients), QuantumTrainer (Adam),
+                    PcaAngleEncoder, ShotExecutor (Aer sampling -- where S3 attacks act)
+scripts/            run_single, run_sweep, build_summary, make_figures, build_reference_table, merge_shards, verify_quantum, submit_hpc.sbatch
 results/            raw/runs.csv, summary/summary.csv, summary/reference_table.md, figures/
 notes/METHODS.md    what was run, every decision
 ```
@@ -88,5 +95,6 @@ train_seconds, git_commit, config_hash
 ```
 
 `intensity` is the sweep value (poisoning fraction, ε, or malicious client fraction); `0` is the clean baseline.
-`attack_success_rate` is blank except for evasion (decision D10). `run_id` is a hash of the full configuration
+`attack_success_rate` is blank except for evasion and S3 (decisions D10, D35). For S3, intensity is injected gate count,
+forged-shot fraction, or noise probability. `run_id` is a hash of the full configuration
 including the seed, so re-running a point produces the same id; `build_summary.py` keeps the latest row per id.
