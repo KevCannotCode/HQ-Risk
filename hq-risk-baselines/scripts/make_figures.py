@@ -23,6 +23,9 @@ FIGURES = [
     ("s1_evasion", "s1", "evasion", "fgsm", "FGSM ε (standardised feature units)", "S1 — FGSM evasion on the test set"),
     ("s2_federated", "s2", "byzantine", "label_flip", "Malicious client fraction", "S2 — label-flipping clients, FedAvg (solid IID, dashed non-IID)"),
     ("s2_federated_signflip", "s2", "byzantine", "sign_flip", "Malicious client fraction", "S2 — sign-flipping clients, FedAvg (solid IID, dashed non-IID)"),
+    ("s3_circuit_tamper", "s3", "circuit_tamper", "rx_half_pi", "Injected RX(π/2) gates", "S3 — circuit tampering, QuantumNet on Aer (256 shots)"),
+    ("s3_shot_bias", "s3", "shot_bias", "forged_bitstring", "Fraction of shots forged", "S3 — shot manipulation, forged counts toward benign / class 0"),
+    ("s3_noise", "s3", "noise", "depolarizing_readout", "Depolarizing + readout error probability p", "S3 — backend noise increase"),
 ]
 
 

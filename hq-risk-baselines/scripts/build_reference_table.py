@@ -18,6 +18,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--evasion-intensity", type=float, default=1.0)
     parser.add_argument("--federated-intensity", type=float, default=0.5)
     parser.add_argument("--partition", default="iid")
+    parser.add_argument("--tamper-intensity", type=float, default=16)
+    parser.add_argument("--shot-bias-intensity", type=float, default=0.4)
+    parser.add_argument("--noise-intensity", type=float, default=0.1)
     return parser.parse_args()
 
 
@@ -45,6 +48,10 @@ def main() -> None:
     poisoned = select(summary, scenario="s1", dataset=args.dataset, attack="poisoning", attack_mode="symmetric", intensity=args.poisoning_intensity)
     evaded = select(summary, scenario="s1", dataset=args.dataset, attack="evasion", attack_mode="fgsm", intensity=args.evasion_intensity)
     malicious = select(summary, scenario="s2", dataset=args.dataset, attack="byzantine", attack_mode="label_flip", partition=args.partition, intensity=args.federated_intensity)
+    clean_qml = select(summary, scenario="s3", dataset=args.dataset, attack="circuit_tamper", intensity=0.0)
+    tampered = select(summary, scenario="s3", dataset=args.dataset, attack="circuit_tamper", intensity=args.tamper_intensity)
+    shot_biased = select(summary, scenario="s3", dataset=args.dataset, attack="shot_bias", intensity=args.shot_bias_intensity)
+    noisy = select(summary, scenario="s3", dataset=args.dataset, attack="noise", intensity=args.noise_intensity)
     clean_fl = select(summary, scenario="s2", dataset=args.dataset, attack="byzantine", attack_mode="label_flip", partition=args.partition, intensity=0.0)
 
     lines = [
@@ -52,7 +59,10 @@ def main() -> None:
         "",
         f"Poisoned ML = symmetric label flip at {args.poisoning_intensity:.0%} of training rows. "
         f"Malicious FL = {args.federated_intensity:.0%} label-flipping clients, {args.partition} partition. "
-        f"Evaded ML = FGSM ε = {args.evasion_intensity} (added: the only system with a defined attack-success rate).",
+        f"Evaded ML = FGSM ε = {args.evasion_intensity} (added). "
+        f"Tampered QML = {args.tamper_intensity:.0f} RX(π/2) gates injected into the trained QuantumNet circuit; "
+        f"shot-biased QML = {args.shot_bias_intensity:.0%} of shots forged; noisy QML = depolarizing + readout p = {args.noise_intensity} (both added). "
+        "Every QML row is evaluated on Qiskit Aer, 256 shots.",
         "",
         "| System | Clean accuracy (%) | Attacked accuracy (%) | Attack success (%) | Accuracy drop (pp) | HQ-Risk |",
         "|---|---|---|---|---|---|",
@@ -60,9 +70,13 @@ def main() -> None:
         f"| Poisoned ML | {percent(poisoned, 'clean_accuracy', 100)} | {percent(poisoned, 'attacked_accuracy', 100)} | {percent(poisoned, 'attack_success_rate', 100)} | {percent(poisoned, 'accuracy_drop_pp', 1)} | |",
         f"| Evaded ML (added) | {percent(evaded, 'clean_accuracy', 100)} | {percent(evaded, 'attacked_accuracy', 100)} | {percent(evaded, 'attack_success_rate', 100)} | {percent(evaded, 'accuracy_drop_pp', 1)} | |",
         f"| Malicious FL | {percent(clean_fl, 'clean_accuracy', 100)} | {percent(malicious, 'attacked_accuracy', 100)} | {percent(malicious, 'attack_success_rate', 100)} | {percent(malicious, 'accuracy_drop_pp', 1)} | |",
-        "| Tampered QML | BLOCKED | BLOCKED | BLOCKED | BLOCKED | |",
+        f"| Clean QML (added) | {percent(clean_qml, 'clean_accuracy', 100)} | {percent(clean_qml, 'attacked_accuracy', 100)} | — | {percent(clean_qml, 'accuracy_drop_pp', 1)} | |",
+        f"| Tampered QML | {percent(tampered, 'clean_accuracy', 100)} | {percent(tampered, 'attacked_accuracy', 100)} | {percent(tampered, 'attack_success_rate', 100)} | {percent(tampered, 'accuracy_drop_pp', 1)} | |",
+        f"| Shot-biased QML (added) | {percent(shot_biased, 'clean_accuracy', 100)} | {percent(shot_biased, 'attacked_accuracy', 100)} | {percent(shot_biased, 'attack_success_rate', 100)} | {percent(shot_biased, 'accuracy_drop_pp', 1)} | |",
+        f"| Noisy QML (added) | {percent(noisy, 'clean_accuracy', 100)} | {percent(noisy, 'attacked_accuracy', 100)} | {percent(noisy, 'attack_success_rate', 100)} | {percent(noisy, 'accuracy_drop_pp', 1)} | |",
         "",
-        "Tampered QML is blocked until the variational circuit is supplied. "
+        "Clean QML is the project lead's QuantumNet circuit trained with Adam; its clean accuracy is the QML baseline, not the logistic-regression one. "
+        "QML attack success rate = test rows correct before and wrong after (same definition as evasion; all S3 attacks act at inference, D35). "
         "Malicious FL clean accuracy is the federated clean baseline (FedAvg, 0 malicious clients), not the centralised one. "
         "Attack success rate is undefined for poisoning and federated attacks until it is defined (decision D10).",
     ]

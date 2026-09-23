@@ -1,7 +1,8 @@
 # METHODS — what was run, and every assumption
 
-**Written:** 2026-09-07. **Scope:** S1 (classical ML) and S2 (federated learning) baselines and attack sweeps.
-**S3 (quantum):** not run. Blocked on the circuit. Nothing stubbed, nothing guessed.
+**Written:** 2026-09-07, S3 added 2026-09-23. **Scope:** S1 (classical ML), S2 (federated learning) and S3 (QML) baselines and attack sweeps.
+**S3 (quantum):** the project lead's `QuantumNet` circuit from the Qiskit notebook (v6), trained with Adam instead of the gradient-free
+SantaQuark optimiser, as instructed. Decisions D31–D40 below.
 
 Every decision below is **an implementer default, not an instruction from the project lead**. Each is one config value or one
 constant; reversing any of them is a one-line change followed by a re-run. **Please veto.**
@@ -16,6 +17,8 @@ constant; reversing any of them is a one-line change followed by a re-run. **Ple
 | scikit-learn | 1.9.0 |
 | numpy | 2.5.3 |
 | pandas | 3.0.5 |
+| qiskit / qiskit-aer | 2.5.2 / 0.17.2 (S3) |
+| torch | 2.14.0 CPU (S3) |
 | Hardware | single CPU, local machine (the HPC cluster is not yet available — see blockers) |
 | Data | `sklearn.datasets` bundled copies of Breast Cancer (569×30, 2 classes), Digits (1797×64, 10 classes), Wine (178×13, 3 classes) |
 
@@ -30,7 +33,10 @@ constant; reversing any of them is a one-line change followed by a re-run. **Ple
 | S1 evasion, FGSM | `configs/s1_evasion.yaml` | Breast Cancer, Digits, Wine | ε = 0, 0.1, 0.25, 0.5, 1.0 | 0–4 | 75 |
 | S2 federated, label-flip | `configs/s2_federated.yaml` | Breast Cancer, Digits × {IID, non-IID} | 0, 10, 20, 30, 40, 50 % clients | 0–4 | 120 |
 | S2 federated, sign-flip | `configs/s2_federated_signflip.yaml` | Breast Cancer × {IID, non-IID} | 0, 10, 20, 30, 40, 50 % clients | 0–4 | 60 |
-| **Total** | | | | | **375** |
+| S3 circuit tampering | `configs/s3_circuit_tamper.yaml` | Breast Cancer, Wine | 0, 1, 2, 4, 8, 16 injected gates | 0–4 | 60 |
+| S3 shot manipulation | `configs/s3_shot_bias.yaml` | Breast Cancer, Wine | 0, 5, 10, 20, 30, 40 % of shots forged | 0–4 | 60 |
+| S3 noise increase | `configs/s3_noise.yaml` | Breast Cancer, Wine | p = 0, 0.005, 0.01, 0.02, 0.05, 0.1 | 0–4 | 60 |
+| **Total** | | | | | **555** |
 
 Every run trains its own clean model on the same split and seed, so each row is self-contained and every
 clean-vs-attacked comparison is paired (same draw, only the attack differs).
@@ -81,12 +87,31 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 
 ---
 
+## 4b. S3 decisions (D31–D40) — taken from the notebook where it had an answer, otherwise implementer defaults
+
+| # | Decision | Value used | Why |
+|---|---|---|---|
+| D31 | Circuit | `QuantumNet` unchanged: 8 qubits, RY(πx)·RZ(πx) angle encoding, 1 re-upload, 1 RY/RZ variational layer, CX on (0,1)(2,3)(4,5)(6,7), per-qubit ⟨Z⟩ → BatchNorm1d → Linear | Notebook defaults (`N_QUBITS=8`, `N_REUPLOADS=1`, `VARIATIONAL_LAYERS_PER_REUPLOAD=1`) |
+| D32 | Optimiser | Adam, lr 0.05, batch 16, 30 epochs, on circuit weights and head together | Project lead: "gradient-based optimizer", no SantaQuark. lr/epochs chosen once on seed 0; not tuned per dataset |
+| D33 | Gradients | exact: statevector simulated in torch (`src/quantum/statevector.py`), autograd gives the analytic gradient that parameter-shift estimates. The simulator reads the gates off the Qiskit circuit and matches `qiskit.quantum_info.Statevector` to 4e-16 (`scripts/verify_quantum.py`) | Parameter-shift on Aer would be ~33 circuits per sample per step; same gradient in expectation, ~100× slower |
+| D34 | Inference / evaluation | Qiskit Aer `SamplerV2`, 256 shots, seed = run seed, untranspiled circuit; counts → ⟨Z⟩ exactly as the notebook | Notebook's `FINAL_EVAL_SHOTS=256`. Untranspiled so noise lands on the gates actually written in the circuit |
+| D35 | Where the attacks act | all three at **inference**, on the trained clean model; one trained model per (dataset, seed) is reused across intensities | Proposal lists execution-integrity attacks (circuit, shots, noise), not training-time ones. Attack success rate is filled for S3 with the evasion definition (D10) |
+| D36 | Datasets | Breast Cancer, Wine. **Digits dropped**: 10 classes on 8 qubits reached only 64 % (seed 0, Aer) | Notebook is binary (Breast Cancer, MNIST 0/1); Wine (3 classes) still works at 94 % |
+| D37 | Preprocessing | DatasetLoader split + StandardScaler (as S1), then PCA to 8 components and MinMax to [0, 1], both fitted on train only | Notebook preprocessing on the harness's split, so S3 uses the same test rows as S1 |
+| D38 | Circuit tampering | k RX(π/2) gates, each at a random position and random qubit of the trained circuit; rng keyed by seed so the k = 4 gates contain the k = 2 gates | "Injected gate count" is the proposal's intensity axis; gate type and angle are not specified |
+| D39 | Shot manipulation | **falsify counts**: a fraction f of each circuit's 256 shots is replaced by one forged bitstring — the one the trained head maps most strongly to benign (Breast Cancer) / class 0 (Wine) | Open question on direction (increase / decrease / falsify). Falsifying is the reading that makes "shot bias" an attack; increasing shots only improves estimates |
+| D40 | Noise increase | depolarizing error p on every 1- and 2-qubit gate + symmetric readout flip p, p ∈ {0.005, 0.01, 0.02, 0.05, 0.1} | Simple, one knob. Real devices have 2-qubit error ≈ 10× 1-qubit error; not modelled |
+
+---
+
 ## 5. Reproducibility
 
 - All randomness comes from `numpy.random.default_rng([seed, k])` streams keyed by seed and role (partition, client id, poisoning row choice) or from `random_state=seed` in scikit-learn. No global RNG.
 - `run_id` = hash of the full configuration incl. seed; `config_hash` = the same without the seed. Re-running a point yields a byte-identical row apart from `timestamp` and `train_seconds`. Verified.
 - FGSM gradients for both models were checked against central finite differences (max abs error ≈ 1e-11) on Breast Cancer (binary) and Digits (multiclass).
 - Test set: SHA-256 fingerprint of `(x_test, y_test)` taken before and asserted after every run.
+- S3: model init and batch order seeded locally (`torch.random.fork_rng`, no global RNG); training twice gives bit-identical weights; Aer sampler seeded with the run seed. Checked by `scripts/verify_quantum.py`.
+- Adding the S3 fields to `RunConfig` did not change any S1/S2 `run_id` (all 375 recomputed and matched).
 
 ---
 
@@ -97,7 +122,8 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 | HPC cluster name, account, scheduler partition, module policy | the project lead | `scripts/submit_hpc.sbatch` has placeholders; everything ran locally instead |
 | Attack success rate for poisoning / federated | the project lead | one column blank on 300 of 375 rows |
 | Whether the formula consumes accuracy drop (circularity) | the project lead | decides whether these numbers can validate the score at all |
-| QML circuit | the project lead | S3 not started |
+| Shot-manipulation direction (increase / decrease / falsify) | the project lead | D39 picked falsify |
+| Noise levels and whether hardware (IBM QPU) runs are wanted | the project lead | simulator only; `RUN_ON_IBM_QPU` path from the notebook not ported |
 
 ---
 
@@ -122,6 +148,17 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 | S2 sign-flip clients | Breast Cancer IID | 10 %: −1.8 ± 1.4 pp | 50 %: −70.4 ± 17.3 pp |
 | | Breast Cancer non-IID | 10 %: 0.0 ± 1.1 pp | 50 %: −64.6 ± 39.7 pp |
 
+**S3, QuantumNet + Adam on Aer (256 shots).** Clean: Breast Cancer 92.3 ± 1.4 %, Wine 93.9 ± 2.3 % (the notebook's SantaQuark run: 91.2 % on its own Breast Cancer split).
+
+| Sweep | Dataset | Weakest point | Strongest point (max intensity) |
+|---|---|---|---|
+| S3 circuit tampering | Breast Cancer | 1 gate: −20.7 ± 25.4 pp | 16 gates: −49.6 ± 29.0 pp (8 gates: −56.7 ± 27.4 pp) |
+| | Wine | 1 gate: −11.1 ± 20.5 pp | 16 gates: −66.1 ± 18.0 pp |
+| S3 shot manipulation | Breast Cancer | 5 %: −6.5 ± 3.3 pp, malignant recall 0.62 | 40 %: −29.1 ± 1.4 pp, **malignant recall 0.00** (clean 0.88) |
+| | Wine | 5 %: −0.6 ± 4.6 pp | 40 %: −59.4 ± 4.2 pp |
+| S3 noise increase | Breast Cancer | p 0.005: −0.2 ± 2.7 pp | p 0.1: −17.2 ± 3.3 pp |
+| | Wine | p 0.005: +0.6 ± 2.3 pp | p 0.1: −33.3 ± 9.2 pp |
+
 the project lead's reference-system table with these numbers: `results/summary/reference_table.md`. Figures: `results/figures/`.
 
 ---
@@ -134,3 +171,7 @@ the project lead's reference-system table with these numbers: `results/summary/r
 4. **Federated attacks below 40 % barely register on IID data** (≤ 3 pp on both datasets). FedAvg weighted by sample count dilutes a minority of label-flipping clients. The interesting region is 40–50 %, which is also where the theoretical guarantees of plain FedAvg end.
 5. **FGSM at ε = 1.0 is total** on every dataset (≥ 94 % ASR). One standard deviation per feature is a very large perturbation for tabular data; ε = 0.1–0.25 is the informative range. Worth asking whether ε = 1.0 is meant to be a ceiling point or a realistic one.
 6. **Federated clean baseline ≈ centralised baseline** (within 1.5 pp on every dataset/partition), so S2 accuracy drops are attributable to the attack, not to federation itself.
+7. **Circuit tampering is high-variance, not noisy.** One RX(π/2) gate costs ≈ 0 pp on some seeds and 47–63 pp on others, depending on which qubit and position it lands on (sd 20–29 pp). Mean ± sd undersells it; `summary.csv` carries min/max. Breast Cancer at 16 gates (42.6 %) is above 8 gates (35.6 %) — within one sd; stacked π/2 rotations can partially undo each other.
+8. **Shot manipulation saturates on Breast Cancer at 20 %:** every test row is classified benign (accuracy 63.2 % = benign share, malignant recall 0). Like targeted poisoning, accuracy understates it — recall is the metric.
+9. **Noise below p = 0.02 is invisible** at 256 shots (≤ 1.2 pp, inside shot noise). The informative range is 0.05–0.1.
+10. **Clean QML sits ~5 pp below clean logistic regression** on Breast Cancer (92.3 vs 97.0 %). Accuracy drops for S3 are measured against the QML baseline, never the S1 one.
