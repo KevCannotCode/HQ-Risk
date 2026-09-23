@@ -21,6 +21,8 @@ class SweepConfig:
             return self._classical_runs()
         if scenario == RunConfig.S2:
             return self._federated_runs()
+        if scenario == RunConfig.S3:
+            return self._quantum_runs()
         raise ValueError(f"unknown scenario {scenario!r} in {self.path}")
 
     def _classical_runs(self) -> list[RunConfig]:
@@ -59,4 +61,24 @@ class SweepConfig:
             for dataset, partition, intensity, seed in itertools.product(
                 self.raw["datasets"], self.raw["partitions"], self.raw["intensities"], self.raw["seeds"]
             )
+        ]
+
+    def _quantum_runs(self) -> list[RunConfig]:
+        quantum = self.raw["quantum"]
+        return [
+            RunConfig(
+                scenario=RunConfig.S3,
+                dataset=dataset,
+                model=self.raw["model"],
+                attack=self.raw["attack"],
+                attack_mode=self.raw["attack_mode"],
+                intensity=float(intensity),
+                seed=int(seed),
+                learning_rate=float(quantum["learning_rate"]),
+                batch_size=int(quantum["batch_size"]),
+                n_qubits=int(quantum["n_qubits"]),
+                shots=int(quantum["shots"]),
+                epochs=int(quantum["epochs"]),
+            )
+            for dataset, seed, intensity in itertools.product(self.raw["datasets"], self.raw["seeds"], self.raw["intensities"])
         ]
