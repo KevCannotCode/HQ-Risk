@@ -49,7 +49,7 @@ python scripts/run_single.py --scenario s3 --dataset breast_cancer --model quant
 
 ## Results explorer
 
-`explorer/index.html` is a static page for browsing every sweep and the reference-system table interactively.
+`explorer/index.html` is a static page for browsing every sweep and the reference-system table interactively. Live: https://hq-risk-explorer.netlify.app
 Refresh its data after new runs, then open the file or deploy the folder (`netlify.toml` publishes `explorer/`):
 
 ```bash
