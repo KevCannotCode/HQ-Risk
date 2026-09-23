@@ -47,6 +47,15 @@ python scripts/run_single.py --scenario s3 --dataset breast_cancer --model quant
 
 `--dry-run` on `run_sweep.py` lists the runs without executing them.
 
+## Results explorer
+
+`explorer/index.html` is a static page for browsing every sweep and the reference-system table interactively.
+Refresh its data after new runs, then open the file or deploy the folder (`netlify.toml` publishes `explorer/`):
+
+```bash
+python scripts/build_explorer.py          # explorer/data.js from summary.csv + runs.csv
+```
+
 ## HPC
 
 ```bash
@@ -78,6 +87,7 @@ src/
   quantum/          QuantumNet (the circuit), TorchStatevector (exact gradients), QuantumTrainer (Adam),
                     PcaAngleEncoder, ShotExecutor (Aer sampling -- where S3 attacks act)
 scripts/            run_single, run_sweep, build_summary, make_figures, build_reference_table, merge_shards, verify_quantum, submit_hpc.sbatch
+explorer/           static results explorer (index.html + generated data.js)
 results/            raw/runs.csv, summary/summary.csv, summary/reference_table.md, figures/
 notes/METHODS.md    what was run, every decision
 ```
