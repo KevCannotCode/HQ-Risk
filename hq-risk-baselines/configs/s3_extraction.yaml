@@ -1,10 +1,10 @@
 scenario: s3
-attack: shot_bias
-attack_mode: forged_bitstring
+attack: extraction
+attack_mode: label_only
 model: quantum_net
 datasets: [breast_cancer, digits, wine]
-# intensity = fraction of each circuit's shots replaced by the forged bitstring
-intensities: [0, 0.05, 0.1, 0.2, 0.3, 0.4]
+# intensity = number of label-only queries the attacker sends
+intensities: [0, 10, 25, 50, 100, 250, 500, 1000]
 seeds: [0, 1, 2, 3, 4]
 quantum:
   n_qubits: 8

@@ -6,6 +6,8 @@ import numpy as np
 class DataPartitioner:
     IID = "iid"
     NON_IID = "non_iid"
+    # Wine has 142 training rows; a Dirichlet draw can leave a client empty. Redraw from the same stream (D45).
+    MAX_DRAWS = 100
 
     def __init__(self, partition: str, dirichlet_alpha: float):
         if partition not in (self.IID, self.NON_IID):
@@ -17,7 +19,10 @@ class DataPartitioner:
         if self.partition == self.IID:
             shards = self._split_iid(len(y), n_clients, rng)
         else:
-            shards = self._split_dirichlet(y, n_clients, n_classes, rng)
+            for _ in range(self.MAX_DRAWS):
+                shards = self._split_dirichlet(y, n_clients, n_classes, rng)
+                if all(len(shard) for shard in shards):
+                    break
         self._assert_every_client_has_data(shards)
         return shards
 

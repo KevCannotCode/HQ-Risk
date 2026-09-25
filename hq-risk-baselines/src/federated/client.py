@@ -17,11 +17,10 @@ class FederatedClient:
         rng: np.random.Generator,
     ):
         self.client_id = client_id
-        self.x = x
         self.n_classes = n_classes
         self.behaviour = behaviour
         self.rng = rng
-        self.y = behaviour.corrupt_labels(y, n_classes, rng)
+        self.x, self.y = behaviour.corrupt_data(x, y, n_classes, rng)
 
     @property
     def n_samples(self) -> int:

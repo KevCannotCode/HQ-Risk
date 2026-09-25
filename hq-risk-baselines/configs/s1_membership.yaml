@@ -1,0 +1,9 @@
+scenario: s1
+attack: membership
+attack_mode: confidence_threshold
+model: logistic_regression
+datasets: [breast_cancer, digits, wine]
+# intensity = members and non-members the attacker already knows (each side), used to set the threshold
+intensities: [0, 2, 5, 10, 20]
+seeds: [0, 1, 2, 3, 4]
+output: results/raw/runs.csv

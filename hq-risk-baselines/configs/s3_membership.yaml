@@ -1,10 +1,10 @@
 scenario: s3
-attack: shot_bias
-attack_mode: forged_bitstring
+attack: membership
+attack_mode: confidence_threshold
 model: quantum_net
 datasets: [breast_cancer, digits, wine]
-# intensity = fraction of each circuit's shots replaced by the forged bitstring
-intensities: [0, 0.05, 0.1, 0.2, 0.3, 0.4]
+# intensity = members and non-members the attacker already knows (each side), used to set the threshold
+intensities: [0, 2, 5, 10, 20]
 seeds: [0, 1, 2, 3, 4]
 quantum:
   n_qubits: 8

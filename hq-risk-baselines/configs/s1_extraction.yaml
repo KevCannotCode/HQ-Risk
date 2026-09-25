@@ -1,0 +1,9 @@
+scenario: s1
+attack: extraction
+attack_mode: label_only
+model: logistic_regression
+datasets: [breast_cancer, digits, wine]
+# intensity = number of label-only queries the attacker sends
+intensities: [0, 10, 25, 50, 100, 250, 500, 1000]
+seeds: [0, 1, 2, 3, 4]
+output: results/raw/runs.csv

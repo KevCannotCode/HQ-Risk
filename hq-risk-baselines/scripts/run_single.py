@@ -16,7 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scenario", required=True, choices=[RunConfig.S1, RunConfig.S2, RunConfig.S3])
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--model", default="logistic_regression")
-    parser.add_argument("--attack", required=True, choices=[RunConfig.POISONING, RunConfig.EVASION, RunConfig.BYZANTINE, RunConfig.CIRCUIT_TAMPER, RunConfig.SHOT_BIAS, RunConfig.NOISE])
+    parser.add_argument("--attack", required=True, choices=RunConfig.ATTACKS)
     parser.add_argument("--attack-mode", required=True)
     parser.add_argument("--intensity", type=float, required=True)
     parser.add_argument("--seed", type=int, default=0)

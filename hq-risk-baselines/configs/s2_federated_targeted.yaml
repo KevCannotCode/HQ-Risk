@@ -1,6 +1,6 @@
 scenario: s2
 attack: byzantine
-attack_mode: label_flip
+attack_mode: targeted_flip
 model: logistic_regression
 datasets: [breast_cancer, digits, wine]
 partitions: [iid, non_iid]

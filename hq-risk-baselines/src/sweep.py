@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from src.experiment import RunConfig
+from src.run_config import RunConfig
 
 
 class SweepConfig:
