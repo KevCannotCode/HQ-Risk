@@ -32,6 +32,9 @@ Then aggregate, plot, and fill the project lead's table:
 python scripts/build_summary.py        # results/summary/summary.csv  (mean, sd, min, max, n per configuration)
 python scripts/make_figures.py         # results/figures/*.png
 python scripts/build_reference_table.py   # results/summary/reference_table.md
+python scripts/build_tables.py         # results/tables/: paper tables (CSV + tables.md, caption below, Cureus style)
+python scripts/build_explorer.py       # explorer/data.js + explorer/data/ (copies of every source CSV)
+python scripts/check_results.py        # fails if summary, tables or explorer data no longer match runs.csv
 ```
 
 One point, for debugging:
@@ -51,11 +54,16 @@ Running several sweeps at once: set `OMP_NUM_THREADS=1` per process, otherwise t
 ## Results explorer
 
 `explorer/index.html` is a static page for browsing every sweep and the reference-system table interactively. Live: https://hq-risk-explorer.netlify.app
-Refresh its data after new runs, then open the file or deploy the folder (`netlify.toml` publishes `explorer/`):
+Every value on it opens a drill-through (5-seed summary, per-seed rows, source file and filter, CSV download).
+It also shows the paper tables and serves the source CSVs under `explorer/data/`.
+Refresh after new runs, then deploy the folder (`netlify.toml` publishes `explorer/`):
 
 ```bash
-python scripts/build_explorer.py          # explorer/data.js from summary.csv + runs.csv
+python scripts/build_tables.py && python scripts/build_explorer.py && python scripts/check_results.py
+npx netlify-cli deploy --prod --dir explorer --site 54039fc9-496a-46e3-9f98-8bd96a78cb61 --no-build
 ```
+
+Progress log: `notes/PROGRESS.md`.
 
 ## HPC
 
@@ -92,11 +100,13 @@ src/
   federated/        DataPartitioner, FederatedClient, FederatedServer
   quantum/          QuantumNet (the circuit), TorchStatevector (exact gradients), QuantumTrainer (Adam),
                     PcaAngleEncoder, ShotExecutor (Aer sampling), QuantumClassifier (the model as an API)
-scripts/            run_single, run_sweep, build_summary, make_figures, build_reference_table, build_explorer,
-                    merge_shards, verify_quantum, submit_hpc.sbatch
-explorer/           static results explorer (index.html + generated data.js)
-results/            raw/runs.csv, summary/summary.csv, summary/reference_table.md, figures/
+scripts/            run_single, run_sweep, build_summary, make_figures, build_reference_table, build_tables,
+                    build_explorer, check_results, merge_shards, verify_quantum, submit_hpc.sbatch
+                    sweep_catalog.py: one title / intensity label / headline metric per sweep (tables + explorer)
+explorer/           static results explorer (index.html + generated data.js + data/ copies of the source CSVs)
+results/            raw/runs.csv, summary/summary.csv, summary/reference_table.md, tables/, figures/
 notes/METHODS.md    what was run, every decision
+notes/PROGRESS.md   what has been done so far, session by session
 ```
 
 ## Results schema

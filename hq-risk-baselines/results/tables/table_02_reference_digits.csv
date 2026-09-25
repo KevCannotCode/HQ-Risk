@@ -1,0 +1,24 @@
+System,Attack strength,Clean accuracy (%),Accuracy (%),Success (%),Success measure,Drop (pp)
+Clean ML,none,97.0 ± 0.7,97.0 ± 0.7,—,—,0.0 ± 0.0
+Poisoned ML,Poisoning rate 40%,97.0 ± 0.7,85.8 ± 1.2,—,undefined,11.2 ± 0.8
+Targeted-poisoned ML,Source-class rows flipped 40%,97.0 ± 0.7,93.7 ± 1.4,28.3 ± 11.4,source rows → target,3.3 ± 1.1
+Evaded ML,FGSM ε 1,97.0 ± 0.7,0.0 ± 0.0,100.0 ± 0.0,correct → wrong,97.0 ± 0.7
+Backdoored ML (ARF),Triggered training rows 20%,97.0 ± 0.7,94.8 ± 0.5,98.1 ± 1.2,triggered rows → target,2.2 ± 0.6
+Stolen ML (ARF),Queries 1000,97.0 ± 0.7,95.6 ± 0.8,97.5 ± 0.6,fidelity,1.4 ± 1.1
+Membership-inferred ML (ARF),Known members per side 20,97.0 ± 0.7,97.0 ± 0.7,51.5 ± 1.7,membership accuracy,0.0 ± 0.0
+Inverted ML (ARF),Queries per class 2000,97.0 ± 0.7,97.0 ± 0.7,64.8 ± 1.5,cosine × 100,0.0 ± 0.0
+Clean FL,none,95.9 ± 0.5,95.9 ± 0.5,—,—,0.0 ± 0.0
+"Malicious FL, label flip",Malicious clients 50%,95.9 ± 0.5,87.7 ± 1.5,—,undefined,8.2 ± 1.6
+"Malicious FL, sign flip",Malicious clients 50%,95.9 ± 0.5,8.5 ± 3.5,—,undefined,87.4 ± 3.5
+"Malicious FL, targeted flip",Malicious clients 50%,95.9 ± 0.5,92.2 ± 0.8,33.9 ± 11.4,source rows → target,3.7 ± 0.9
+Backdoored FL (ARF),Malicious clients 50%,95.9 ± 0.5,94.3 ± 0.3,97.5 ± 1.1,triggered rows → target,1.6 ± 0.5
+Clean QML,none,68.6 ± 7.9,68.6 ± 7.9,—,—,0.0 ± 0.0
+Tampered QML,Injected RX(π/2) gates 16,68.6 ± 7.9,10.3 ± 5.6,89.7 ± 6.5,correct → wrong,58.3 ± 10.8
+Shot-biased QML,Forged shots 40%,68.6 ± 7.9,10.1 ± 0.1,87.1 ± 1.4,correct → wrong,58.6 ± 7.8
+Noisy QML,Error probability p 0.1,68.6 ± 7.9,33.2 ± 3.8,61.3 ± 3.7,correct → wrong,35.4 ± 5.4
+Transpiler drift QML (QTF · TSV),RZ offset (rad) 0.8,68.6 ± 7.9,24.4 ± 7.5,74.0 ± 10.3,correct → wrong,44.2 ± 1.6
+Transpiler swap QML (QTF · TSV),Inserted SWAPs 4,68.6 ± 7.9,18.1 ± 8.5,79.7 ± 10.6,correct → wrong,50.6 ± 9.0
+Backdoored QML (ARF),Triggered training rows 20%,68.6 ± 7.9,68.0 ± 5.1,78.7 ± 8.8,triggered rows → target,0.6 ± 10.5
+Stolen QML (ARF),Queries 1000,68.6 ± 7.9,58.9 ± 5.6,59.8 ± 8.1,fidelity,9.7 ± 9.2
+Membership-inferred QML (ARF),Known members per side 20,68.6 ± 7.9,68.6 ± 7.9,49.3 ± 2.3,membership accuracy,0.0 ± 0.0
+Inverted QML (ARF),Queries per class 2000,68.6 ± 7.9,68.6 ± 7.9,52.8 ± 7.0,cosine × 100,0.0 ± 0.0
