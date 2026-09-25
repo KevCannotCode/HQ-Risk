@@ -1,6 +1,7 @@
 # METHODS — what was run, and every assumption
 
-**Written:** 2026-09-07, S3 added 2026-09-23. **Scope:** S1 (classical ML), S2 (federated learning) and S3 (QML) baselines and attack sweeps.
+**Written:** 2026-09-07, S3 added 2026-09-23, coverage extension (ARF, QTF · TSV, Digits/Wine gaps) added 2026-09-24.
+**Scope:** S1 (classical ML), S2 (federated learning) and S3 (QML) baselines and attack sweeps.
 **S3 (quantum):** the project lead's `QuantumNet` circuit from the Qiskit notebook (v6), trained with Adam instead of the gradient-free
 SantaQuark optimiser, as instructed. Decisions D31–D40 below.
 
@@ -28,15 +29,29 @@ constant; reversing any of them is a one-line change followed by a re-run. **Ple
 
 | Sweep | Config | Datasets | Intensities | Seeds | Runs |
 |---|---|---|---|---|---|
-| S1 poisoning, symmetric | `configs/s1_poisoning.yaml` | Breast Cancer, Digits, Wine | 0, 5, 10, 20, 30, 40 % | 0–4 | 90 |
-| S1 poisoning, targeted | `configs/s1_poisoning_targeted.yaml` | Breast Cancer | 0, 5, 10, 20, 30, 40 % | 0–4 | 30 |
-| S1 evasion, FGSM | `configs/s1_evasion.yaml` | Breast Cancer, Digits, Wine | ε = 0, 0.1, 0.25, 0.5, 1.0 | 0–4 | 75 |
-| S2 federated, label-flip | `configs/s2_federated.yaml` | Breast Cancer, Digits × {IID, non-IID} | 0, 10, 20, 30, 40, 50 % clients | 0–4 | 120 |
-| S2 federated, sign-flip | `configs/s2_federated_signflip.yaml` | Breast Cancer × {IID, non-IID} | 0, 10, 20, 30, 40, 50 % clients | 0–4 | 60 |
-| S3 circuit tampering | `configs/s3_circuit_tamper.yaml` | Breast Cancer, Wine | 0, 1, 2, 4, 8, 16 injected gates | 0–4 | 60 |
-| S3 shot manipulation | `configs/s3_shot_bias.yaml` | Breast Cancer, Wine | 0, 5, 10, 20, 30, 40 % of shots forged | 0–4 | 60 |
-| S3 noise increase | `configs/s3_noise.yaml` | Breast Cancer, Wine | p = 0, 0.005, 0.01, 0.02, 0.05, 0.1 | 0–4 | 60 |
-| **Total** | | | | | **555** |
+| S1 poisoning, symmetric | `configs/s1_poisoning.yaml` | BC, Digits, Wine | 0, 5, 10, 20, 30, 40 % | 0–4 | 90 |
+| S1 poisoning, targeted | `configs/s1_poisoning_targeted.yaml` | BC, Digits, Wine | 0, 5, 10, 20, 30, 40 % of source rows | 0–4 | 90 |
+| S1 evasion, FGSM | `configs/s1_evasion.yaml` | BC, Digits, Wine | ε = 0, 0.1, 0.25, 0.5, 1.0 | 0–4 | 75 |
+| ARF · S1 backdoor / trojan | `configs/s1_backdoor.yaml` | BC, Digits, Wine | 0, 1, 2, 5, 10, 20 % of training rows | 0–4 | 90 |
+| ARF · S1 steal (extraction) | `configs/s1_extraction.yaml` | BC, Digits, Wine | 0, 10, 25, 50, 100, 250, 500, 1000 queries | 0–4 | 120 |
+| ARF · S1 infer (membership) | `configs/s1_membership.yaml` | BC, Digits, Wine | k = 0, 2, 5, 10, 20 known rows per side | 0–4 | 75 |
+| ARF · S1 infer (inversion) | `configs/s1_inversion.yaml` | BC, Digits, Wine | 0, 20, 100, 500, 2000 queries per class | 0–4 | 75 |
+| S2 federated, label-flip | `configs/s2_federated.yaml` | BC, Digits, Wine × {IID, non-IID} | 0, 10, 20, 30, 40, 50 % clients | 0–4 | 180 |
+| S2 federated, sign-flip | `configs/s2_federated_signflip.yaml` | BC, Digits, Wine × {IID, non-IID} | 0, 10, 20, 30, 40, 50 % clients | 0–4 | 180 |
+| S2 federated, targeted flip | `configs/s2_federated_targeted.yaml` | BC, Digits, Wine × {IID, non-IID} | 0, 10, 20, 30, 40, 50 % clients | 0–4 | 180 |
+| ARF · S2 federated backdoor | `configs/s2_federated_backdoor.yaml` | BC, Digits, Wine × {IID, non-IID} | 0, 10, 20, 30, 40, 50 % clients | 0–4 | 180 |
+| QTF · S3 circuit tampering | `configs/s3_circuit_tamper.yaml` | BC, Digits, Wine | 0, 1, 2, 4, 8, 16 injected gates | 0–4 | 90 |
+| QTF · S3 shot manipulation | `configs/s3_shot_bias.yaml` | BC, Digits, Wine | 0, 5, 10, 20, 30, 40 % of shots forged | 0–4 | 90 |
+| QTF · S3 noise increase | `configs/s3_noise.yaml` | BC, Digits, Wine | p = 0, 0.005, 0.01, 0.02, 0.05, 0.1 | 0–4 | 90 |
+| QTF · TSV transpiler angle drift | `configs/s3_transpiler_drift.yaml` | BC, Digits, Wine | δ = 0, 0.05, 0.1, 0.2, 0.4, 0.8 rad | 0–4 | 90 |
+| QTF · TSV transpiler qubit swap | `configs/s3_transpiler_swap.yaml` | BC, Digits, Wine | 0, 1, 2, 3, 4 SWAPs | 0–4 | 75 |
+| ARF · S3 backdoor / trojan | `configs/s3_backdoor.yaml` | BC, Digits, Wine | 0, 1, 2, 5, 10, 20 % of training rows | 0–4 | 90 |
+| ARF · S3 steal (extraction) | `configs/s3_extraction.yaml` | BC, Digits, Wine | 0, 10, 25, 50, 100, 250, 500, 1000 queries | 0–4 | 120 |
+| ARF · S3 infer (membership) | `configs/s3_membership.yaml` | BC, Digits, Wine | k = 0, 2, 5, 10, 20 | 0–4 | 75 |
+| ARF · S3 infer (inversion) | `configs/s3_inversion.yaml` | BC, Digits, Wine | 0, 20, 100, 500, 2000 queries per class | 0–4 | 75 |
+| **Total** | | | | | **2130** |
+
+BC = Breast Cancer.
 
 Every run trains its own clean model on the same split and seed, so each row is self-contained and every
 clean-vs-attacked comparison is paired (same draw, only the attack differs).
@@ -104,6 +119,30 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 
 ---
 
+## 4c. Coverage extension decisions (D41–D52) — after the project lead's review
+
+The review asked for: targeted poisoning and QML on Digits; federated label/sign flip and targeted poisoning on Wine;
+ARF (backdoor/trojan, steal, infer) and QTF · TSV (transpiler / supply chain). ARF and QTF are not defined in any document
+we hold; they were read as "adversarial-AI attacks" and "quantum-threat attacks", and every attack below is labelled with the
+factor the review listed it under. Everything is an implementer default.
+
+| # | Decision | Value used | Why |
+|---|---|---|---|
+| D41 | Targeted pair | Breast Cancer malignant → benign (unchanged); Digits and Wine **class 0 → class 1** | Multiclass has no "class of interest". Lowest two labels is the rule with no cherry-picking; any pair is one dict entry in `src/datasets.py` |
+| D42 | Backdoor trigger | last 3 features set to +3 standardised units; stamped rows relabelled to the D41 target class; stamped rows drawn from non-target rows; fraction of **all** training rows (as D8) | Simplest tabular trigger an attacker controlling raw inputs can plant. For Digits the last 3 features are bottom-right pixels |
+| D43 | Success rate for targeted attacks | targeted poisoning / targeted-flip clients: share of **source-class** test rows predicted as the target. Backdoor: share of **non-target** test rows predicted as the target once the trigger is stamped. **Filled at intensity 0 too** (natural error rate / trigger on the clean model) | Standard definitions. Departs from D10/D27 for these attacks only; symmetric poisoning and label/sign-flip FL stay blank. The Breast Cancer targeted sweep was re-run to fill it; its accuracies are byte-identical |
+| D44 | Malicious FL client, new modes | `targeted_flip`: relabels **all** its source-class rows (as D24). `backdoor`: stamps the trigger on **50 %** of its rows, trains honestly | Half its data stays clean so its update does not stand out |
+| D45 | non-IID partition on Wine | redraw the Dirichlet split from the same RNG stream until no client is empty (max 100 draws) | Wine has 142 training rows over 10 clients. Breast Cancer and Digits never hit an empty client, so their partitions are unchanged |
+| D46 | Steal (model extraction) | label-only API; queries drawn from N(0, I) in standardised feature space; stolen copy = logistic regression. Success = **fidelity** (share of test rows where copy and victim agree); attacked accuracy = the copy's accuracy. Intensity = query count | Attacker knows the feature scaling but holds no real data. Victim accuracy is unchanged by this attack |
+| D47 | Infer — membership | confidence-threshold attack on the victim's probability of the true label. Members = training rows, non-members = test rows, balanced by subsampling. Attacker knows k rows of each and picks the best threshold on them; scored on the rest. Success = membership accuracy (0.5 = guessing). Intensity = k | No spare data exists for shadow models on these datasets. Threshold-free AUC was also checked on LR and MLP: 0.49–0.53 on every dataset |
+| D48 | Infer — model inversion | black-box, zeroth-order: from the feature mean, climb log p(class) with 10 antithetic Gaussian directions (σ 0.5), step 0.5, L2 penalty 0.05. Success column holds the **mean cosine similarity** between each class's reconstruction and that class's true training mean — a similarity in [−1, 1], not a rate. Intensity = queries per class | Query-only, so the same attack runs unchanged against QML (where every answer is a 256-shot estimate) |
+| D49 | QTF · TSV (transpiler / supply chain) | the circuit is compiled by Qiskit's `generate_preset_pass_manager` (optimisation level 1, basis rz/sx/x/cx); one malicious pass is placed in its `post_optimization` stage. `angle_drift`: adds δ rad to every RZ of the compiled circuit. `qubit_swap`: inserts k SWAPs on random qubit pairs before readout (a routing stage that forgets the final layout). Clean baseline = the uncompiled circuit, as in all S3 sweeps | The honest compile (δ = 0, k = 0) is checked to be unitary-equivalent to the original circuit. Two swaps on the same pair cancel — kept, it is what a random pass does |
+| D50 | Digits on QML | same 8-qubit QuantumNet. Clean accuracy 68.6 ± 7.9 % (5 seeds). 10 and 12 qubits were tried on seed 0: 63 % and 56 %, vs 65 % at 8 — worse | Reverses D36. 10 classes read from 8 Z expectations through one linear layer is the bottleneck, not qubit count |
+| D51 | Backdoor on QML | poisoned rows are stamped in standardised space; PCA + MinMax and the QuantumNet are refitted on the poisoned training set | The trigger is part of the data the whole pipeline learns from |
+| D52 | Shot manipulation target on Digits | class 0 (as Wine) | Same rule as D39 for multiclass |
+
+---
+
 ## 5. Reproducibility
 
 - All randomness comes from `numpy.random.default_rng([seed, k])` streams keyed by seed and role (partition, client id, poisoning row choice) or from `random_state=seed` in scikit-learn. No global RNG.
@@ -112,6 +151,11 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 - Test set: SHA-256 fingerprint of `(x_test, y_test)` taken before and asserted after every run.
 - S3: model init and batch order seeded locally (`torch.random.fork_rng`, no global RNG); training twice gives bit-identical weights; Aer sampler seeded with the run seed. Checked by `scripts/verify_quantum.py`.
 - Adding the S3 fields to `RunConfig` did not change any S1/S2 `run_id` (all 375 recomputed and matched).
+- 2026-09-24 refactor (`experiment.py` split into `src/scenarios/`): all 375 S1/S2 rows and 19 S3 rows were re-run and match
+  byte-for-byte, except the newly filled targeted-poisoning success rate (D43).
+- `scripts/run_sweep.py --skip-existing` only runs configurations whose `run_id` is not yet in the CSV; extended sweeps did not re-run old points.
+- Runs were executed as parallel single-threaded processes (`OMP_NUM_THREADS=1`). Several processes each using every core
+  made QML training ~30× slower; results are unaffected, only `train_seconds`.
 
 ---
 
@@ -124,6 +168,8 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 | Whether the formula consumes accuracy drop (circularity) | the project lead | decides whether these numbers can validate the score at all |
 | Shot-manipulation direction (increase / decrease / falsify) | the project lead | D39 picked falsify |
 | Noise levels and whether hardware (IBM QPU) runs are wanted | the project lead | simulator only; `RUN_ON_IBM_QPU` path from the notebook not ported |
+| Definitions of ARF, QTF and TSV (which attacks each factor contains, how they enter the score) | the project lead | read from the review's grouping; see 4c |
+| Whether an overfitted victim should be added as a membership-inference positive control | the project lead | MIA is at chance everywhere (observation 12) |
 
 ---
 
@@ -159,6 +205,28 @@ clean-vs-attacked comparison is paired (same draw, only the attack differs).
 | S3 noise increase | Breast Cancer | p 0.005: −0.2 ± 2.7 pp | p 0.1: −17.2 ± 3.3 pp |
 | | Wine | p 0.005: +0.6 ± 2.3 pp | p 0.1: −33.3 ± 9.2 pp |
 
+**Digits on QML (D50):** clean 68.6 ± 7.9 %. Circuit tampering 16 gates → 10.3 %; shot manipulation 40 % → 10.1 % (every row read as class 0); noise p 0.1 → 33.2 %.
+
+### Coverage extension (2026-09-24), strongest point of each sweep
+
+| Sweep | Breast Cancer | Digits | Wine |
+|---|---|---|---|
+| S1 targeted poisoning 40 %: source → target | 52 % (natural 6 %) | 28 % (0 %) | 38 % (0 %) |
+| S2 targeted-flip clients 50 %, IID / non-IID | 59 % / 67 % | 34 % / 38 % | 50 % / 57 % |
+| S2 label-flip clients 50 %, IID / non-IID accuracy | (unchanged, see above) | 87.7 / 76.6 % | 70.6 / 63.3 % |
+| S2 sign-flip clients 50 %, IID / non-IID accuracy | (unchanged) | 8.5 / 24.3 % | 16.7 / 38.9 % |
+| ARF S1 backdoor, 1 % → 20 % poisoned: trigger success | 54 → 94 %, accuracy −0.9 → −6.5 pp | 66 → 98 %, −0.7 → −2.2 pp | 41 → 95 %, −1.1 → −3.9 pp |
+| ARF S2 backdoor clients 10 % → 50 %, IID | 40 → 92 % | 65 → 98 % | 61 → 98 % |
+| ARF S1 steal, fidelity at 50 / 1000 queries | 95 / 99 % | 41 / 97 % | 94 / 100 % |
+| ARF S1 membership accuracy (k = 20) | 51 % | 52 % | 43 % |
+| ARF S1 inversion cosine at 20 / 2000 queries | 0.41 / 0.71 | 0.27 / 0.65 | 0.47 / 0.88 |
+| QTF · TSV angle drift 0.2 / 0.8 rad, QML accuracy | 84.6 / 56.1 % | 42.0 / 24.4 % | 91.1 / 53.9 % |
+| QTF · TSV qubit swap 1 / 4 SWAPs, QML accuracy | 79.8 / 42.5 % | 49.0 / 18.1 % | 88.9 / 52.8 % |
+| ARF S3 backdoor 5 % / 20 %: trigger success | 67 / 82 % | 23 / 79 % | 65 / 88 % (natural 24 %) |
+| ARF S3 steal, fidelity at 50 / 1000 queries | 94 / 94 % | 20 / 60 % | 82 / 92 % |
+| ARF S3 membership accuracy (k = 20) | 52 % | 49 % | 46 % |
+| ARF S3 inversion cosine at 20 / 2000 queries | 0.27 / 0.66 | 0.15 / 0.53 | 0.45 / 0.86 |
+
 the project lead's reference-system table with these numbers: `results/summary/reference_table.md`. Figures: `results/figures/`.
 
 ---
@@ -175,3 +243,29 @@ the project lead's reference-system table with these numbers: `results/summary/r
 8. **Shot manipulation saturates on Breast Cancer at 20 %:** every test row is classified benign (accuracy 63.2 % = benign share, malignant recall 0). Like targeted poisoning, accuracy understates it — recall is the metric.
 9. **Noise below p = 0.02 is invisible** at 256 shots (≤ 1.2 pp, inside shot noise). The informative range is 0.05–0.1.
 10. **Clean QML sits ~5 pp below clean logistic regression** on Breast Cancer (92.3 vs 97.0 %). Accuracy drops for S3 are measured against the QML baseline, never the S1 one.
+
+Added 2026-09-24:
+
+11. **Backdoors are the clearest case of accuracy hiding an attack.** Poisoning 1 % of training rows (1–14 rows) makes the trigger
+    work on 41–66 % of rows while clean accuracy moves ≤ 1.1 pp. Any score that reads accuracy drop would rate this system
+    almost clean. Same in FL: 10 % backdoor clients reach 40–65 % trigger success with ≤ 3 pp accuracy loss.
+12. **Membership inference fails on every model here** (43–52 %, i.e. guessing, on LR and QML; threshold-free AUC 0.49–0.53
+    on LR and MLP). The models barely overfit (train–test gap 1–3 pp). This is a real negative result, not a bug: the Infer
+    factor of these systems is low. Wine at k = 20 (43–46 %) is below chance because only 16 rows per side remain to score
+    on — the threshold overfits the known rows. If the lead wants a positive MIA control, the standard move is an overfitted
+    victim (e.g. an unregularised MLP on a small training set) — one config value.
+13. **Steal is cheap on binary and small-class tasks**: 25–50 label-only queries clone Breast Cancer and Wine models to ≥ 93 %
+    fidelity. Digits (64 features, 10 classes) needs ~500. The stolen copy of the QML model is a classical LR and is *more*
+    accurate than the QML victim on Breast Cancer (94.2 vs 92.3 %) — the attacker gets a better model than the one they stole.
+14. **Targeted poisoning is weaker on multiclass.** Flipping 40 % of Digits class-0 rows moves only 28 % of class-0 test rows
+    (Wine: 38 %), because the remaining 60 % of correctly labelled rows still dominate. The success rate at intensity 0
+    (the natural source → target error) is now reported, so the curve starts at the true floor.
+15. **Sign flip on Digits and Wine collapses the model at 50 % malicious clients** (IID accuracy 8.5 % and 16.7 %, below chance),
+    as on Breast Cancer; label flip stays far milder (87.7 % and 70.6 %). Non-IID results remain bimodal (observation 3).
+16. **The TSV transpiler attack is as damaging as direct circuit tampering but smoother.** A 0.2 rad drift on every RZ
+    costs 3–27 pp depending on the dataset; 0.4 rad costs 14–44 pp. Unlike random gate insertion, drift is monotone and
+    low-variance, because every gate moves the same way. Qubit swap is closer to tampering: which pair is swapped decides the damage.
+17. **QML is more exposed than LR to Wine's backdoor trigger even without poisoning** (24 % of triggered rows already land in
+    class 1 at intensity 0, vs 0 % for LR): three +3 σ features survive PCA as a large shift on one component.
+18. **Digits on QML is weak (68.6 ± 7.9 %)** and collapses to one class under shot manipulation (10.1 % = class-0 share) and
+    ~4 injected gates. Its numbers are valid for ordering but the clean baseline itself is far from the LR one (97 %).
