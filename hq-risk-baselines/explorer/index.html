@@ -127,6 +127,13 @@ th { color: var(--text-secondary); font-weight: 600; }
 .bar-value strong { font-size: 14px; }
 .unavailable { color: var(--text-muted); font-size: 13px; font-style: italic; }
 footer { margin-top: 28px; }
+.coverage th, .coverage td { text-align: center; }
+.coverage th:first-child, .coverage td:first-child { text-align: left; }
+.coverage .grp td { text-align: left; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); padding-top: 14px; }
+.coverage button { border: 0; background: transparent; padding: 2px 8px; color: var(--accent); font-weight: 700; }
+.coverage button:hover, .coverage button:focus-visible { background: var(--surface-0); }
+.coverage .none { color: var(--text-muted); }
+.coverage .scen { border-left: 1px solid var(--border); }
 @media (max-width: 720px) {
   header { flex-direction: column; }
   .sys-row { grid-template-columns: 1fr; }
@@ -140,13 +147,19 @@ footer { margin-top: 28px; }
   <header>
     <div>
       <h1>HQ-Risk Results Explorer</h1>
-      <p class="lede">Clean baselines and attack sweeps for the three HQ-Risk scenarios: S1 classical ML, S2 federated learning, S3 QML (the QuantumNet circuit trained with Adam, evaluated on Qiskit Aer at 256 shots). Every point is 5 seeds.</p>
+      <p class="lede">Clean baselines and attack sweeps for the three HQ-Risk scenarios: S1 classical ML, S2 federated learning, S3 QML (the QuantumNet circuit trained with Adam, evaluated on Qiskit Aer at 256 shots), across Breast Cancer, Digits and Wine. Attacks cover the core set (poisoning, evasion, Byzantine clients), ARF (backdoor, steal, infer) and QTF (circuit, shots, noise, TSV transpiler). Every point is 5 seeds.</p>
       <p class="muted" id="provenance"></p>
     </div>
     <button id="theme" type="button" aria-label="Toggle light or dark theme">Theme</button>
   </header>
 
-  <section class="card" aria-labelledby="sweep-title">
+  <section class="card" aria-labelledby="coverage-title">
+    <h2 id="coverage-title">Coverage</h2>
+    <p class="muted">Which attack has been run on which system and dataset, read straight from the results. Each tick is a full sweep (every intensity × 5 seeds; federated cells hold IID and non-IID). Click a tick to open that sweep.</p>
+    <div class="table-scroll"><table id="coverage" class="coverage"></table></div>
+  </section>
+
+  <section class="card" aria-labelledby="sweep-title" id="sweeps-card">
     <h2 id="sweep-title">Attack sweeps</h2>
     <p class="muted">Pick a sweep and a metric. Hover the chart for exact values; the table below the chart has every number.</p>
     <div class="controls">
@@ -169,7 +182,7 @@ footer { margin-top: 28px; }
 
   <section class="card" aria-labelledby="ref-title">
     <h2 id="ref-title">Reference systems</h2>
-    <p class="muted">The proposal's four systems plus the added ones. Drag a slider to change that attack's strength. The vertical tick on each bar is that scenario's clean baseline.</p>
+    <p class="muted">The proposal's four systems plus every added attack. Drag a slider to change that attack's strength. The vertical tick on each bar is the same attack's intensity-0 value. "Attack success" means something different per attack; the small print under each name says what.</p>
     <div class="controls">
       <label class="field">Dataset<select id="ref-dataset"></select></label>
       <label class="field">Metric<select id="ref-metric"></select></label>
@@ -179,7 +192,7 @@ footer { margin-top: 28px; }
   </section>
 
   <footer class="muted">
-    <p>Code, raw runs and every modelling decision (D1–D40): <a href="https://github.com/KevCannotCode/HQ-Risk">github.com/KevCannotCode/HQ-Risk</a> — see <code>hq-risk-baselines/notes/METHODS.md</code>. The HQ-Risk score itself is not computed here.</p>
+    <p>Code, raw runs and every modelling decision (D1–D52): <a href="https://github.com/KevCannotCode/HQ-Risk">github.com/KevCannotCode/HQ-Risk</a> — see <code>hq-risk-baselines/notes/METHODS.md</code>. The HQ-Risk score itself is not computed here.</p>
   </footer>
 </main>
 
@@ -189,28 +202,75 @@ footer { margin-top: 28px; }
 const DATA = window.HQ_DATA;
 
 const pct = v => `${Math.round(v * 100)}%`;
+const CORE = "Core attacks: poisoning, evasion, Byzantine clients";
+const ARF = "ARF · Adversarial-AI factor: backdoor, steal, infer";
+const QTF = "QTF · Quantum-threat factor: execution + TSV";
+const count = v => `${v}`;
+const TARGETED_ASR = "Source-class rows sent to the target class";
+const BACKDOOR_ASR = "Triggered rows classified as the target class";
 const SWEEPS = [
-  { id: "s1_poisoning", scenario: "s1", attack: "poisoning", mode: "symmetric", label: "S1 · Label-flip poisoning (symmetric)", x: "Poisoning rate (fraction of training rows)", fx: pct,
+  { id: "s1_poisoning", group: CORE, scenario: "s1", attack: "poisoning", mode: "symmetric", label: "S1 · Label-flip poisoning (symmetric)", x: "Poisoning rate (fraction of training rows)", fx: pct,
     note: "A fraction of training labels is flipped to a random other class before training. Model: logistic regression." },
-  { id: "s1_poisoning_targeted", scenario: "s1", attack: "poisoning", mode: "targeted", label: "S1 · Targeted poisoning (malignant → benign)", x: "Fraction of malignant training rows flipped", fx: pct,
-    note: "Malignant training rows are relabelled benign (Breast Cancer only). Watch malignant recall, not accuracy." },
-  { id: "s1_evasion", scenario: "s1", attack: "evasion", mode: "fgsm", label: "S1 · FGSM evasion", x: "FGSM ε (standardised feature units)", fx: v => `ε ${v}`,
+  { id: "s1_poisoning_targeted", group: CORE, scenario: "s1", attack: "poisoning", mode: "targeted", label: "S1 · Targeted poisoning (source → target class)", x: "Fraction of source-class training rows flipped", fx: pct,
+    metric: "attack_success_rate", asr: TARGETED_ASR,
+    note: "Source-class training rows are relabelled as the target class: malignant → benign for Breast Cancer, class 0 → class 1 for Digits and Wine. Success = share of source-class test rows now predicted as the target; intensity 0 shows the natural error rate." },
+  { id: "s1_evasion", group: CORE, scenario: "s1", attack: "evasion", mode: "fgsm", label: "S1 · FGSM evasion", x: "FGSM ε (standardised feature units)", fx: v => `ε ${v}`,
+    asr: "Attack success (correct → wrong)",
     note: "White-box FGSM perturbs each test row by ε per feature (features are standardised, so ε = 1 is one standard deviation)." },
-  { id: "s2_federated", scenario: "s2", attack: "byzantine", mode: "label_flip", label: "S2 · Malicious FL clients (label flip)", x: "Malicious client fraction (of 10 clients)", fx: pct,
-    note: "FedAvg over 10 clients, 30 rounds. Malicious clients train on fully flipped labels. Solid = IID data, dashed = non-IID (Dirichlet α 0.5)." },
-  { id: "s2_federated_signflip", scenario: "s2", attack: "byzantine", mode: "sign_flip", label: "S2 · Malicious FL clients (sign flip)", x: "Malicious client fraction (of 10 clients)", fx: pct,
+  { id: "s2_federated", group: CORE, scenario: "s2", attack: "byzantine", mode: "label_flip", label: "S2 · Malicious FL clients (label flip)", x: "Malicious client fraction (of 10 clients)", fx: pct,
+    note: "FedAvg over 10 clients, 30 rounds. Malicious clients train on fully flipped labels. Solid = IID data, dashed = non-IID (Dirichlet α 0.5). Wine has only 14 training rows per client." },
+  { id: "s2_federated_signflip", group: CORE, scenario: "s2", attack: "byzantine", mode: "sign_flip", label: "S2 · Malicious FL clients (sign flip)", x: "Malicious client fraction (of 10 clients)", fx: pct,
     note: "Malicious clients send the negated model update. Solid = IID, dashed = non-IID." },
-  { id: "s3_circuit_tamper", scenario: "s3", attack: "circuit_tamper", mode: "rx_half_pi", label: "S3 · Circuit tampering", x: "Injected RX(π/2) gates", fx: v => `${v} gates`,
+  { id: "s2_federated_targeted", group: CORE, scenario: "s2", attack: "byzantine", mode: "targeted_flip", label: "S2 · Malicious FL clients (targeted flip)", x: "Malicious client fraction (of 10 clients)", fx: pct,
+    metric: "attack_success_rate", asr: TARGETED_ASR,
+    note: "Malicious clients relabel all their source-class rows as the target class (same pair as S1 targeted). Solid = IID, dashed = non-IID." },
+  { id: "s1_backdoor", group: ARF, scenario: "s1", attack: "backdoor", mode: "trigger", label: "ARF · S1 · Backdoor / trojan", x: "Fraction of training rows stamped with the trigger", fx: pct,
+    metric: "attack_success_rate", asr: BACKDOOR_ASR,
+    note: "Trigger = last 3 features set to +3 standard deviations; stamped training rows are relabelled as the target class. Accuracy on clean inputs barely moves (a stealthy attack); the success rate is measured on triggered test rows. Intensity 0 = trigger on the clean model." },
+  { id: "s2_federated_backdoor", group: ARF, scenario: "s2", attack: "byzantine", mode: "backdoor", label: "ARF · S2 · Backdoor clients", x: "Malicious client fraction (of 10 clients)", fx: pct,
+    metric: "attack_success_rate", asr: BACKDOOR_ASR,
+    note: "Each malicious client stamps the trigger on half of its rows and relabels them as the target class, then trains honestly. Solid = IID, dashed = non-IID." },
+  { id: "s3_backdoor", group: ARF, scenario: "s3", attack: "backdoor", mode: "trigger", label: "ARF · S3 · Backdoor / trojan on QML", x: "Fraction of training rows stamped with the trigger", fx: pct,
+    metric: "attack_success_rate", asr: BACKDOOR_ASR,
+    note: "Same trigger as S1, but the QuantumNet is retrained on the poisoned data (PCA + angle encoding fitted on it too) and evaluated on Aer." },
+  { id: "s1_extraction", group: ARF, scenario: "s1", attack: "extraction", mode: "label_only", label: "ARF · S1 · Steal (model extraction)", x: "Label-only queries sent by the attacker", fx: count, ordinal: true,
+    metric: "attack_success_rate", asr: "Fidelity: stolen copy agrees with the victim", acc: "Stolen copy's accuracy",
+    note: "The attacker sends random inputs to a label-only API and fits a logistic regression on the answers. Fidelity = share of test rows where the stolen copy and the victim agree." },
+  { id: "s3_extraction", group: ARF, scenario: "s3", attack: "extraction", mode: "label_only", label: "ARF · S3 · Steal a QML model", x: "Label-only queries sent by the attacker", fx: count, ordinal: true,
+    metric: "attack_success_rate", asr: "Fidelity: stolen copy agrees with the victim", acc: "Stolen copy's accuracy",
+    note: "The victim is the QML model behind an API (every answer is a 256-shot Aer run). The stolen copy is a classical logistic regression." },
+  { id: "s1_membership", group: ARF, scenario: "s1", attack: "membership", mode: "confidence_threshold", label: "ARF · S1 · Infer (membership inference)", x: "Members and non-members the attacker already knows (each side)", fx: count, ordinal: true,
+    metric: "attack_success_rate", asr: "Membership attack accuracy", chance: 0.5,
+    note: "Was this row in the training set? The attacker thresholds the model's confidence in the true label, calibrated on the rows it already knows. 50% = guessing (dashed line). The model is not changed, so accuracy does not drop." },
+  { id: "s3_membership", group: ARF, scenario: "s3", attack: "membership", mode: "confidence_threshold", label: "ARF · S3 · Infer membership from QML", x: "Members and non-members the attacker already knows (each side)", fx: count, ordinal: true,
+    metric: "attack_success_rate", asr: "Membership attack accuracy", chance: 0.5,
+    note: "Same attack against the QML model's shot-based class probabilities. 50% = guessing (dashed line)." },
+  { id: "s1_inversion", group: ARF, scenario: "s1", attack: "inversion", mode: "zeroth_order", label: "ARF · S1 · Infer (model inversion)", x: "Probability queries per class", fx: count, ordinal: true,
+    metric: "attack_success_rate", asr: "Reconstruction similarity to the true class mean (cosine)",
+    note: "Black-box inversion: starting from the average input, the attacker climbs the model's probability for each class using only queries, then compares each reconstruction with that class's real training mean (1 = same direction, 0 = unrelated)." },
+  { id: "s3_inversion", group: ARF, scenario: "s3", attack: "inversion", mode: "zeroth_order", label: "ARF · S3 · Invert a QML model", x: "Probability queries per class", fx: count, ordinal: true,
+    metric: "attack_success_rate", asr: "Reconstruction similarity to the true class mean (cosine)",
+    note: "Same black-box inversion against the QML model; every probability comes from a 256-shot Aer run, so the attacker climbs a noisy signal." },
+  { id: "s3_circuit_tamper", group: QTF, scenario: "s3", attack: "circuit_tamper", mode: "rx_half_pi", label: "QTF · S3 · Circuit tampering", x: "Injected RX(π/2) gates", fx: v => `${v} gates`,
+    asr: "Attack success (correct → wrong)",
     note: "Extra RX(π/2) gates are inserted at random positions and qubits of the trained QuantumNet circuit before it runs on Aer. Large spread: the damage depends on where the gate lands." },
-  { id: "s3_shot_bias", scenario: "s3", attack: "shot_bias", mode: "forged_bitstring", label: "S3 · Shot manipulation", x: "Fraction of each circuit's 256 shots forged", fx: pct,
-    note: "The attacker controls the returned counts and replaces a fraction of shots with the bitstring the model reads as most benign (class 0 for Wine)." },
-  { id: "s3_noise", scenario: "s3", attack: "noise", mode: "depolarizing_readout", label: "S3 · Noise increase", x: "Depolarizing + readout error probability p", fx: v => `p ${v}`,
+  { id: "s3_shot_bias", group: QTF, scenario: "s3", attack: "shot_bias", mode: "forged_bitstring", label: "QTF · S3 · Shot manipulation", x: "Fraction of each circuit's 256 shots forged", fx: pct,
+    asr: "Attack success (correct → wrong)",
+    note: "The attacker controls the returned counts and replaces a fraction of shots with the bitstring the model reads as most benign (class 0 for Digits and Wine)." },
+  { id: "s3_noise", group: QTF, scenario: "s3", attack: "noise", mode: "depolarizing_readout", label: "QTF · S3 · Noise increase", x: "Depolarizing + readout error probability p", fx: v => `p ${v}`,
+    asr: "Attack success (correct → wrong)",
     note: "Depolarizing error p on every gate plus readout bit-flip p, simulated on Aer." },
+  { id: "s3_transpiler_drift", group: QTF, scenario: "s3", attack: "transpiler", mode: "angle_drift", label: "QTF · TSV · Transpiler angle drift", x: "Radians added to every RZ by the compromised pass", fx: v => `${v} rad`,
+    asr: "Attack success (correct → wrong)",
+    note: "Supply-chain attack: the circuit is compiled by Qiskit's standard preset pass manager, into which one malicious pass is slipped. It adds a small offset to every RZ angle of the compiled circuit. With no offset the compiled circuit is proven equivalent to the original." },
+  { id: "s3_transpiler_swap", group: QTF, scenario: "s3", attack: "transpiler", mode: "qubit_swap", label: "QTF · TSV · Transpiler qubit swap", x: "SWAP gates inserted before readout", fx: v => `${v} swaps`,
+    asr: "Attack success (correct → wrong)",
+    note: "The malicious pass behaves like a routing stage that inserts SWAPs before measurement without tracking the final layout, so qubit readouts reach the classifier in the wrong order. Pairs are drawn at random per seed." },
 ];
 const METRICS = [
   { id: "attacked_accuracy", label: "Accuracy under attack", unit: "frac" },
   { id: "accuracy_drop_pp", label: "Accuracy drop (percentage points)", unit: "pp" },
-  { id: "attack_success_rate", label: "Attack success rate", unit: "frac" },
+  { id: "attack_success_rate", label: "Attack success (meaning depends on the attack)", unit: "frac" },
   { id: "positive_recall", label: "Malignant recall (macro recall for Wine/Digits)", unit: "frac" },
   { id: "balanced_accuracy", label: "Balanced accuracy", unit: "frac" },
   { id: "f1", label: "F1 (malignant; macro for Wine/Digits)", unit: "frac" },
@@ -238,7 +298,13 @@ function html(tag, props = {}, text) {
   if (text !== undefined) node.textContent = text;
   return node;
 }
-function metricInfo(id) { return METRICS.find(m => m.id === id); }
+function metricInfo(id, sweep) {
+  const base = METRICS.find(m => m.id === id);
+  if (sweep && id === "attack_success_rate" && sweep.asr) return { ...base, label: sweep.asr };
+  if (sweep && id === "attacked_accuracy" && sweep.acc) return { ...base, label: sweep.acc };
+  return base;
+}
+function sweepMetrics(sweep) { return METRICS.map(m => metricInfo(m.id, sweep)); }
 function fmt(v, unit) {
   if (v === null || v === undefined || Number.isNaN(v)) return "—";
   return unit === "pp" ? `${v.toFixed(1)} pp` : `${(v * 100).toFixed(1)}%`;
@@ -285,7 +351,7 @@ function niceTicks(lo, hi, count = 5) {
 
 function renderSweep() {
   const sweep = SWEEPS.find(s => s.id === state.sweep);
-  const metric = metricInfo(state.metric);
+  const metric = metricInfo(state.metric, sweep);
   const all = seriesFor(sweep, state.metric);
   const shown = all.filter(s => !state.hidden.has(s.dataset));
 
@@ -307,11 +373,13 @@ function renderSweep() {
 
   const xs = [...new Set(all.flatMap(s => s.points.map(p => p.x)))].sort((a, b) => a - b);
   const values = shown.flatMap(s => s.points.flatMap(p => [p.mean - (p.sd || 0), p.mean + (p.sd || 0)]).concat(state.seeds ? s.seeds.map(d => d.y) : [])).filter(v => v !== null && !Number.isNaN(v));
-  let lo = metric.unit === "pp" ? Math.min(0, ...values) : 0;
+  let lo = Math.min(0, ...values);
   let hi = metric.unit === "pp" ? Math.max(10, ...values) : 1;
   const yTicks = niceTicks(lo, hi);
   lo = Math.min(lo, yTicks[0]); hi = Math.max(hi, yTicks[yTicks.length - 1]);
-  const X = v => m.left + (v - xs[0]) / ((xs[xs.length - 1] - xs[0]) || 1) * (width - m.left - m.right);
+  const X = sweep.ordinal
+    ? v => m.left + xs.indexOf(v) / ((xs.length - 1) || 1) * (width - m.left - m.right)
+    : v => m.left + (v - xs[0]) / ((xs[xs.length - 1] - xs[0]) || 1) * (width - m.left - m.right);
   const Y = v => m.top + (1 - (v - lo) / (hi - lo)) * (height - m.top - m.bottom);
   const tickLabel = v => metric.unit === "pp" ? `${v}` : `${Math.round(v * 100)}%`;
 
@@ -328,6 +396,10 @@ function renderSweep() {
   svg.append(el("text", { x: m.left + (width - m.left - m.right) / 2, y: height - 8, "text-anchor": "middle", "font-size": 13, fill: css("--text-secondary") }, sweep.x));
   svg.append(el("text", { x: 14, y: m.top + (height - m.top - m.bottom) / 2, "text-anchor": "middle", "font-size": 13, fill: css("--text-secondary"), transform: `rotate(-90 14 ${m.top + (height - m.top - m.bottom) / 2})` }, metric.unit === "pp" ? "Drop (pp)" : "Mean ± sd"));
 
+  if (sweep.chance !== undefined && metric.id === "attack_success_rate") {
+    svg.append(el("line", { x1: m.left, x2: width - m.right, y1: Y(sweep.chance), y2: Y(sweep.chance), stroke: css("--text-muted"), "stroke-width": 1.5, "stroke-dasharray": "5 4" }));
+    svg.append(el("text", { x: m.left + 6, y: Y(sweep.chance) - 6, "font-size": 12, fill: css("--text-muted") }, "guessing"));
+  }
   const surface = css("--surface-1");
   if (state.seeds) {
     for (const s of shown) {
@@ -449,14 +521,26 @@ function renderTable(sweep, metric, shown) {
 const SYSTEMS = [
   { group: "S1 · Classical ML", label: "Clean ML", sub: "logistic regression, no attack", sweep: "s1_poisoning", fixed: 0 },
   { group: "S1 · Classical ML", label: "Poisoned ML", sub: "symmetric label flip", sweep: "s1_poisoning", start: 0.4 },
-  { group: "S1 · Classical ML", label: "Targeted poisoning", sub: "malignant → benign", sweep: "s1_poisoning_targeted", start: 0.4 },
+  { group: "S1 · Classical ML", label: "Targeted poisoning", sub: "source → target class", sweep: "s1_poisoning_targeted", start: 0.4 },
   { group: "S1 · Classical ML", label: "Evaded ML", sub: "FGSM", sweep: "s1_evasion", start: 1 },
+  { group: "S1 · Classical ML", label: "Backdoored ML", sub: "ARF · trigger poisoning", sweep: "s1_backdoor", start: 0.2 },
+  { group: "S1 · Classical ML", label: "Stolen ML", sub: "ARF · steal; success = fidelity", sweep: "s1_extraction", start: 1000 },
+  { group: "S1 · Classical ML", label: "Membership-inferred ML", sub: "ARF · infer; success = attack accuracy", sweep: "s1_membership", start: 20 },
+  { group: "S1 · Classical ML", label: "Inverted ML", sub: "ARF · infer; success = cosine", sweep: "s1_inversion", start: 2000 },
   { group: "S2 · Federated", label: "Malicious FL", sub: "label-flipping clients", sweep: "s2_federated", start: 0.5 },
   { group: "S2 · Federated", label: "Malicious FL", sub: "sign-flipping clients", sweep: "s2_federated_signflip", start: 0.5 },
+  { group: "S2 · Federated", label: "Malicious FL", sub: "targeted-flip clients", sweep: "s2_federated_targeted", start: 0.5 },
+  { group: "S2 · Federated", label: "Backdoored FL", sub: "ARF · backdoor clients", sweep: "s2_federated_backdoor", start: 0.5 },
   { group: "S3 · QML", label: "Clean QML", sub: "QuantumNet + Adam, Aer 256 shots", sweep: "s3_circuit_tamper", fixed: 0 },
   { group: "S3 · QML", label: "Tampered QML", sub: "injected RX(π/2) gates", sweep: "s3_circuit_tamper", start: 16 },
   { group: "S3 · QML", label: "Shot-biased QML", sub: "forged shots", sweep: "s3_shot_bias", start: 0.4 },
   { group: "S3 · QML", label: "Noisy QML", sub: "depolarizing + readout", sweep: "s3_noise", start: 0.1 },
+  { group: "S3 · QML", label: "Transpiler-drift QML", sub: "QTF · TSV malicious pass", sweep: "s3_transpiler_drift", start: 0.8 },
+  { group: "S3 · QML", label: "Transpiler-swap QML", sub: "QTF · TSV malicious pass", sweep: "s3_transpiler_swap", start: 4 },
+  { group: "S3 · QML", label: "Backdoored QML", sub: "ARF · trigger poisoning", sweep: "s3_backdoor", start: 0.2 },
+  { group: "S3 · QML", label: "Stolen QML", sub: "ARF · steal; success = fidelity", sweep: "s3_extraction", start: 1000 },
+  { group: "S3 · QML", label: "Membership-inferred QML", sub: "ARF · infer; success = attack accuracy", sweep: "s3_membership", start: 20 },
+  { group: "S3 · QML", label: "Inverted QML", sub: "ARF · infer; success = cosine", sweep: "s3_inversion", start: 2000 },
 ];
 const REF_METRICS = METRICS.filter(m => m.id !== "f1");
 const refState = { dataset: "breast_cancer", metric: "attacked_accuracy", partition: "iid", chosen: SYSTEMS.map(s => s.fixed ?? s.start) };
@@ -530,16 +614,88 @@ function renderSystems() {
   });
 }
 
+// ---------- coverage ----------
+const COVERAGE = [
+  { group: CORE, label: "Label-flip poisoning", sweeps: { s1: "s1_poisoning", s2: "s2_federated" } },
+  { group: CORE, label: "Targeted poisoning", sweeps: { s1: "s1_poisoning_targeted", s2: "s2_federated_targeted" } },
+  { group: CORE, label: "Sign-flip updates", sweeps: { s2: "s2_federated_signflip" } },
+  { group: CORE, label: "Evasion (FGSM)", sweeps: { s1: "s1_evasion" } },
+  { group: ARF, label: "Backdoor / trojan", sweeps: { s1: "s1_backdoor", s2: "s2_federated_backdoor", s3: "s3_backdoor" } },
+  { group: ARF, label: "Steal (model extraction)", sweeps: { s1: "s1_extraction", s3: "s3_extraction" } },
+  { group: ARF, label: "Infer: membership", sweeps: { s1: "s1_membership", s3: "s3_membership" } },
+  { group: ARF, label: "Infer: inversion", sweeps: { s1: "s1_inversion", s3: "s3_inversion" } },
+  { group: QTF, label: "Circuit tampering", sweeps: { s3: "s3_circuit_tamper" } },
+  { group: QTF, label: "Shot manipulation", sweeps: { s3: "s3_shot_bias" } },
+  { group: QTF, label: "Noise increase", sweeps: { s3: "s3_noise" } },
+  { group: QTF, label: "TSV: transpiler angle drift", sweeps: { s3: "s3_transpiler_drift" } },
+  { group: QTF, label: "TSV: transpiler qubit swap", sweeps: { s3: "s3_transpiler_swap" } },
+];
+const SCENARIOS = [{ id: "s1", label: "S1 · Classical ML" }, { id: "s2", label: "S2 · Federated" }, { id: "s3", label: "S3 · QML" }];
+
+function renderCoverage() {
+  const table = document.getElementById("coverage");
+  table.replaceChildren();
+  const top = html("tr");
+  top.append(html("th", {}, ""));
+  for (const sc of SCENARIOS) { const th = html("th", { colSpan: DATASETS.length, className: "scen" }, sc.label); top.append(th); }
+  const sub = html("tr");
+  sub.append(html("th", {}, "Attack"));
+  for (const sc of SCENARIOS) DATASETS.forEach((d, i) => sub.append(html("th", { className: i ? "" : "scen" }, d.label)));
+  table.append(top, sub);
+  let group = "";
+  for (const row of COVERAGE) {
+    if (row.group !== group) {
+      group = row.group;
+      const tr = html("tr", { className: "grp" });
+      tr.append(html("td", { colSpan: 1 + SCENARIOS.length * DATASETS.length }, group));
+      table.append(tr);
+    }
+    const tr = html("tr");
+    tr.append(html("td", {}, row.label));
+    for (const sc of SCENARIOS) DATASETS.forEach((d, i) => {
+      const td = html("td", { className: i ? "" : "scen" });
+      const id = row.sweeps[sc.id];
+      const sweep = id && SWEEPS.find(s => s.id === id);
+      const n = sweep ? DATA.runs.filter(r => r.scenario === sweep.scenario && r.attack === sweep.attack && r.attack_mode === sweep.mode && r.dataset === d.id).length : 0;
+      if (n) {
+        const b = html("button", { type: "button", title: `${sweep.label}, ${d.label}: ${n} runs` }, "✓");
+        b.setAttribute("aria-label", `Open ${sweep.label} for ${d.label} (${n} runs)`);
+        b.addEventListener("click", () => { selectSweep(id, d.id); document.getElementById("sweeps-card").scrollIntoView({ behavior: "smooth" }); });
+        td.append(b);
+      } else td.append(html("span", { className: "none", title: "not run" }, "·"));
+      tr.append(td);
+    });
+    table.append(tr);
+  }
+}
+
 // ---------- wiring ----------
 function fill(select, items, value) {
   select.replaceChildren(...items.map(i => { const o = html("option", { value: i.id }, i.label); return o; }));
   select.value = value;
 }
-fill(document.getElementById("sweep"), SWEEPS, state.sweep);
-fill(document.getElementById("metric"), METRICS, state.metric);
+function fillSweeps(select) {
+  const groups = [...new Set(SWEEPS.map(s => s.group))];
+  select.replaceChildren(...groups.map(g => {
+    const group = html("optgroup", { label: g });
+    group.append(...SWEEPS.filter(s => s.group === g).map(s => html("option", { value: s.id }, s.label)));
+    return group;
+  }));
+}
+function selectSweep(id, onlyDataset) {
+  const sweep = SWEEPS.find(s => s.id === id);
+  state.sweep = id;
+  state.metric = sweep.metric || "attacked_accuracy";
+  state.hidden = new Set(onlyDataset ? DATASETS.map(d => d.id).filter(d => d !== onlyDataset) : []);
+  document.getElementById("sweep").value = id;
+  history.replaceState(null, "", `#${id}`);
+  fill(document.getElementById("metric"), sweepMetrics(sweep), state.metric);
+  renderSweep();
+}
+fillSweeps(document.getElementById("sweep"));
 fill(document.getElementById("ref-dataset"), DATASETS, refState.dataset);
 fill(document.getElementById("ref-metric"), REF_METRICS, refState.metric);
-document.getElementById("sweep").addEventListener("change", e => { state.sweep = e.target.value; state.hidden.clear(); renderSweep(); });
+document.getElementById("sweep").addEventListener("change", e => selectSweep(e.target.value));
 document.getElementById("metric").addEventListener("change", e => { state.metric = e.target.value; renderSweep(); });
 document.getElementById("seeds").addEventListener("change", e => { state.seeds = e.target.checked; renderSweep(); });
 document.getElementById("ref-dataset").addEventListener("change", e => { refState.dataset = e.target.value; renderSystems(); });
@@ -552,14 +708,17 @@ document.getElementById("theme").addEventListener("click", () => {
   const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   root.dataset.theme = dark ? "light" : "dark";
   try { localStorage.setItem("hq-theme", root.dataset.theme); } catch (_) {}
-  renderSweep(); renderSystems();
+  renderSweep(); renderSystems(); renderCoverage();
 });
 try { const saved = localStorage.getItem("hq-theme"); if (saved) document.documentElement.dataset.theme = saved; } catch (_) {}
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderSweep(); renderSystems(); });
 let resizeTimer;
 addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderSweep, 120); });
-renderSweep();
+const linked = SWEEPS.find(sw => `#${sw.id}` === location.hash);
+selectSweep(linked ? linked.id : state.sweep);
 renderSystems();
+renderCoverage();
+if (linked) document.getElementById("sweeps-card").scrollIntoView();
 </script>
 </body>
 </html>
