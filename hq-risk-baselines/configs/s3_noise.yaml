@@ -2,7 +2,7 @@ scenario: s3
 attack: noise
 attack_mode: depolarizing_readout
 model: quantum_net
-datasets: [breast_cancer, wine]
+datasets: [breast_cancer, digits, wine]
 # intensity = depolarizing probability per gate = readout flip probability
 intensities: [0, 0.005, 0.01, 0.02, 0.05, 0.1]
 seeds: [0, 1, 2, 3, 4]

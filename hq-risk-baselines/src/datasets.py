@@ -20,6 +20,8 @@ class DatasetSplit:
     y_test: np.ndarray
     n_classes: int
     positive_label: int | None
+    source_label: int
+    target_label: int
 
 
 class DatasetLoader:
@@ -35,6 +37,13 @@ class DatasetLoader:
         "breast_cancer": 1,
         "digits": None,
         "wine": None,
+    }
+
+    # Targeted attacks move source-class rows to the target class. Multiclass: lowest two labels, no cherry-picking (D41).
+    _TARGETED_PAIR = {
+        "breast_cancer": (1, 0),
+        "digits": (0, 1),
+        "wine": (0, 1),
     }
 
     def available(self) -> list[str]:
@@ -70,4 +79,6 @@ class DatasetLoader:
             y_test=y_test,
             n_classes=int(np.unique(labels).size),
             positive_label=self._POSITIVE_LABEL[name],
+            source_label=self._TARGETED_PAIR[name][0],
+            target_label=self._TARGETED_PAIR[name][1],
         )

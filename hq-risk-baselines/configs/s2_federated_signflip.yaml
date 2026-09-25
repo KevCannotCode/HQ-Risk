@@ -2,7 +2,7 @@ scenario: s2
 attack: byzantine
 attack_mode: sign_flip
 model: logistic_regression
-datasets: [breast_cancer]
+datasets: [breast_cancer, digits, wine]
 partitions: [iid, non_iid]
 intensities: [0, 0.1, 0.2, 0.3, 0.4, 0.5]
 seeds: [0, 1, 2, 3, 4]

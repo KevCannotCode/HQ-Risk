@@ -44,3 +44,12 @@ class MetricsCalculator:
             return None
         now_wrong = y_pred_attacked[was_correct] != y_true[was_correct]
         return float(np.mean(now_wrong))
+
+    def targeted_success_rate(
+        self, y_true: np.ndarray, y_pred: np.ndarray, target_label: int, source_label: int | None = None
+    ) -> float | None:
+        """Share of source-class rows (every non-target row when no source) predicted as the target class."""
+        rows = y_true == source_label if source_label is not None else y_true != target_label
+        if not rows.any():
+            return None
+        return float(np.mean(y_pred[rows] == target_label))

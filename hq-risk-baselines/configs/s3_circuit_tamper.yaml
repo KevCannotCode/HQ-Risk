@@ -2,7 +2,7 @@ scenario: s3
 attack: circuit_tamper
 attack_mode: rx_half_pi
 model: quantum_net
-datasets: [breast_cancer, wine]
+datasets: [breast_cancer, digits, wine]
 # intensity = number of injected RX(pi/2) gates
 intensities: [0, 1, 2, 4, 8, 16]
 seeds: [0, 1, 2, 3, 4]

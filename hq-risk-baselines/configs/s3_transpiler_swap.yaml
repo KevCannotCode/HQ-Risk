@@ -1,0 +1,15 @@
+scenario: s3
+attack: transpiler
+attack_mode: qubit_swap
+model: quantum_net
+datasets: [breast_cancer, digits, wine]
+# intensity = SWAP gates a compromised routing pass inserts before readout
+intensities: [0, 1, 2, 3, 4]
+seeds: [0, 1, 2, 3, 4]
+quantum:
+  n_qubits: 8
+  shots: 256
+  epochs: 30
+  learning_rate: 0.05
+  batch_size: 16
+output: results/raw/runs.csv

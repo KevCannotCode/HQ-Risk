@@ -1,0 +1,9 @@
+scenario: s1
+attack: inversion
+attack_mode: zeroth_order
+model: logistic_regression
+datasets: [breast_cancer, digits, wine]
+# intensity = probability queries per class
+intensities: [0, 20, 100, 500, 2000]
+seeds: [0, 1, 2, 3, 4]
+output: results/raw/runs.csv
