@@ -1,4 +1,4 @@
-"""Paper-ready tables from summary.csv: one reference-system table per dataset, then one table per sweep.
+"""Paper-ready tables from summary.csv: one reference-system table per dataset, one table per sweep, then one compact table.
 Writes results/tables/table_NN_<id>.csv and tables.md (Cureus style: caption below, abbreviations under it).
 The explorer embeds the same table objects, so the site and the paper show identical numbers."""
 
@@ -129,11 +129,44 @@ def reference_table(summary: pd.DataFrame, dataset: str, number: int, partition:
             "abbreviations": footnote(caption, note, labels), "groups": None, "columns": columns, "rows": body}
 
 
+COMPACT_METRIC = {None: ("clean_accuracy", "Acc."), "undefined (D10)": ("accuracy_drop_pp", "Drop")}  # otherwise success
+
+
+def compact_table(summary: pd.DataFrame, number: int, partition: str = "iid") -> dict:
+    """One number per attack and dataset, for the 6-page paper: clean accuracy, or the drop when success is undefined,
+    or the success rate at the strongest point of the sweep."""
+    columns = ["System", "Metric", *DATASETS.values()]
+    body, strengths = [], []
+    for label, scenario, attack, mode, success in SYSTEMS:
+        sweep = next(s for s in SWEEPS if (s["scenario"], s["attack"], s["mode"]) == (scenario, attack, mode))
+        metric, name = COMPACT_METRIC.get(success, ("attack_success_rate", "Success"))
+        line = [cell(label), cell(name)]
+        for d in DATASETS:
+            try:
+                rows = sweep_rows(summary, d, partition, scenario, attack, mode)
+            except LookupError:
+                line.append(cell("not run"))
+                continue
+            point = rows.iloc[0] if success is None else rows.iloc[-1]
+            line.append(cell(value(point, metric), point))
+            if success is not None:
+                strengths.append(f"{sweep['x']} {intensity(point['intensity'], sweep['x_unit'])}")
+        body.append(line)
+    caption = "Every attack at the strongest point of its sweep, on the three datasets"
+    note = ("Acc.: clean test accuracy (%). Drop: clean minus attacked accuracy (pp). Success: attack success rate (%); "
+            "for extraction it is the fidelity of the stolen copy, for membership inference the membership accuracy (50 = guessing), "
+            f"for inversion the cosine similarity to the class mean × 100. Strongest points: {'; '.join(dict.fromkeys(strengths))}. "
+            f"FL rows use the {PARTITIONS[partition]} partition. {SEEDS_NOTE}")
+    return {"number": number, "id": "compact", "sweep": None, "caption": caption, "note": note,
+            "abbreviations": footnote(caption, note, " ".join(s[0] for s in SYSTEMS)), "groups": None, "columns": columns, "rows": body}
+
+
 def build_all(summary: pd.DataFrame) -> list[dict]:
     summary = summary.copy()
     summary["partition"] = summary["partition"].fillna("-")
     tables = [reference_table(summary, d, i + 1) for i, d in enumerate(DATASETS)]
     tables += [sweep_table(summary, s, len(tables) + i + 1) for i, s in enumerate(SWEEPS)]
+    tables.append(compact_table(summary, len(tables) + 1))
     for t in tables:
         t["file"] = f"table_{t['number']:02d}_{t['id']}.csv"
     return tables

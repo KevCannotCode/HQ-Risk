@@ -6,6 +6,26 @@ Live site: https://hq-risk-explorer.netlify.app
 
 ---
 
+## 2026-10-08 — Setup and Results for the 6-page paper
+
+**Asked for (project lead, Word draft + WhatsApp):** fill the Setup section of the IEEE draft (how the experiments were run,
+datasets, configurations), short, the whole paper is capped at 6 pages with references, Word required. The lead applies the
+HQ-Risk formula himself once the results are in. Deadline for the conference is 30 December.
+
+**Added:**
+- `results/tables/table_24_compact.csv`: one number per attack and dataset at the strongest point of each sweep (clean
+  accuracy, or drop when success is undefined, or success rate). 23 rows × 3 datasets; fits one IEEE column. The 23 Cureus
+  tables stay for the explorer and the journal version.
+- `notes/paper/sections.md`: the Setup text (4 paragraphs), a Results paragraph that reads table 24, and a comment for the
+  lead about two attacks missing from his Table I (model inversion, federated backdoor).
+- `scripts/fill_paper_docx.py`: pastes the sections under the matching headings of the Word draft, inserts table 24 under
+  Results in the template's `table head` / `table footnote` styles, and anchors the comment on Table I. The draft is Strict
+  OOXML, so the script rewrites the namespaces to Transitional before python-docx reads it. The draft itself stays outside
+  the repo.
+- `check_results.py` still passes; the explorer now lists 24 tables.
+
+**Open:** the lead's formula weights (w, β, α, λ, μ) are symbolic in the draft, so no HQ-Risk score is computed here.
+
 ## 2026-09-25 — Tables, drill-through, data sources
 
 **Asked for:** tables on the live site; clicking a number should open its summary table; show and serve the data sources;
@@ -79,3 +99,5 @@ Acted on the project lead's review:
 - The project lead's veto or confirmation of D1–D52, especially the ARF/QTF/TSV definitions (see METHODS §6).
 - HPC cluster details: the sbatch file still has placeholders, and everything has run locally so far.
 - The HQ-Risk score itself is not computed here; its column in the reference table is left blank on purpose.
+- The SoK paper (quantum circuit partitioning, attack-vs-defence matrix, multi-layer attack) is a separate task; nothing of it
+  lives in this repo yet.

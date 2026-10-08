@@ -37,6 +37,12 @@ python scripts/build_explorer.py       # explorer/data.js + explorer/data/ (copi
 python scripts/check_results.py        # fails if summary, tables or explorer data no longer match runs.csv
 ```
 
+Paper draft (Word): `notes/paper/sections.md` holds the Setup and Results text; this pastes it and table 24 into the IEEE draft:
+
+```bash
+python scripts/fill_paper_docx.py --draft <draft.docx> --out <filled.docx> --author "<name on comments>"
+```
+
 One point, for debugging:
 
 ```bash
