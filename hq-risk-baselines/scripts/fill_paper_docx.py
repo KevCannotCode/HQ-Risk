@@ -85,8 +85,27 @@ def remove_empty_after(paragraph) -> None:
         nxt.getparent().remove(nxt)
 
 
+def table_after(doc: Document, caption: str):
+    nxt = paragraph_by_text(doc, caption)._p.getnext()
+    return next(t for t in doc.tables if t._tbl is nxt)
+
+
+def set_table_cell(doc: Document, spec: str, text: str) -> None:
+    """spec = '<caption> | <row label> | <column header>'; keeps the run formatting of the existing cell."""
+    caption, row_label, column = (s.strip() for s in spec.split("|"))
+    table = table_after(doc, caption)
+    j = [c.text.strip() for c in table.rows[0].cells].index(column)
+    row = next(r for r in table.rows if r.cells[0].text.strip() == row_label)
+    runs = row.cells[j].paragraphs[0].runs
+    runs[0].text = text
+    for extra in runs[1:]:
+        extra._r.getparent().remove(extra._r)
+
+
 def body_paragraph(doc: Document, text: str):
-    p = doc.add_paragraph(text)
+    p = doc.add_paragraph()
+    run = p.add_run(text)
+    run.italic = text.startswith("[") and text.endswith("]")
     p.paragraph_format.first_line_indent = Pt(INDENT_PT)
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     return p
@@ -148,6 +167,9 @@ def main() -> None:
         if heading.startswith("Comment:"):
             target = paragraph_by_text(doc, heading.split(":", 1)[1].strip())
             doc.add_comment(target.runs, text=" ".join(paragraphs), author=args.author, initials=args.author[:2].upper())
+            continue
+        if heading.startswith("Cell:"):
+            set_table_cell(doc, heading.split(":", 1)[1], " ".join(paragraphs))
             continue
         anchor = paragraph_by_text(doc, heading)
         remove_empty_after(anchor)
