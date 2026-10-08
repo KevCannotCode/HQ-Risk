@@ -6,3 +6,4 @@ matplotlib>=3.9
 qiskit>=2.0
 qiskit-aer>=0.17
 torch>=2.4
+python-docx>=1.2   # scripts/fill_paper_docx.py only
