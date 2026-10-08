@@ -23,6 +23,9 @@ HQ-Risk formula himself once the results are in. Deadline for the conference is 
   OOXML, so the script rewrites the namespaces to Transitional before python-docx reads it. The draft itself stays outside
   the repo.
 - `check_results.py` still passes; the explorer now lists 24 tables.
+- Later the same day: the two missing attacks were written into Table I directly (`## Cell:` instruction in `sections.md`),
+  and short drafts marked "[Draft by Kevin …]" were added under Validation protocol, Discussion and Limitations, and
+  Conclusion. The validation text proposes how Table II feeds the formula's inputs; the lead decides.
 
 **Open:** the lead's formula weights (w, β, α, λ, μ) are symbolic in the draft, so no HQ-Risk score is computed here.
 
