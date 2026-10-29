@@ -8,6 +8,8 @@ Live site: https://hq-risk-explorer.netlify.app
 
 ## 2026-10-29 — Validation phase: 20 more seeds, controls, and combined attacks (C1–C4)
 
+**Completed 12:48 (8 local workers, 1 h 33 min):** 13,590 runs asked, 13,590 done, no worker errors. `runs.csv` 10,650 distinct runs (426 configurations × 25 seeds, 72 of them intensity-0 controls with a 0.0 pp drop on every run), `combined.csv` 2,940 runs (147 configurations × 20 seeds). `check_results.py` passes without `--partial`: 28 tables, explorer data, 33 served files. Paper text in `notes/paper/sections.md` moved to 25 seeds and the new counts, with a Setup paragraph and a Results paragraph on C1–C4; Word draft regenerated as `update-10-8/fabrice/HQ-Risk Draft paper-Kevin-validation.docx`.
+
 **Asked for (project lead, email "HQ Risk Paper Update"):** rerun every configuration on 20 new seeds (101–119, "20
 seeds total"), rerun the intensity-0 controls on the same seeds, then a second phase of combined attacks: C1 poisoning ×
 FGSM (S1), C2 sign-flip clients × FGSM × partition (S2), C3 transpiler drift × forged shots × noise (S3), C4 backdoor ×
@@ -124,7 +126,20 @@ Acted on the project lead's review:
 
 ## Open items
 
-- Validation runs (D53–D58) in flight; deploy the explorer again when `check_results.py` passes without `--partial`.
+
+### Next task (2026-10-29, after the validation runs finish)
+
+1. Rebuild: `build_summary.py` (runs.csv), `build_summary.py --runs results/raw/combined.csv --output results/summary/combined_summary.csv`,
+   `build_tables.py`, `build_explorer.py`, then `check_results.py` without `--partial`.
+2. Paper text (`notes/paper/sections.md`): "5 seeds" → 25 seeds (0–4 and 101–120); run counts 2,130 → 10,650 single-attack + 2,940 combined;
+   one sentence each on the intensity-0 controls and the combined attacks C1–C4 (tables 25–28).
+3. Word draft: regenerate from the lead's original with `fill_paper_docx.py --draft "../update-10-8/fabrice/HQ-Risk Draft paper-Init.docx"
+   --out "../update-10-8/fabrice/HQ-Risk Draft paper-Kevin-validation.docx" --author Kevin`; keep the 10-08 copy untouched.
+4. Commit results + text on `feature/validation-runs`, push, open PR to `main`, merge once the test job is green.
+5. Deploy the explorer: `netlify deploy --prod --dir explorer --site 54039fc9-496a-46e3-9f98-8bd96a78cb61`.
+6. Create a separate Gmail draft to the lead for HQ-Risk only (the SoK draft "SoK: Section VI (Defense Landscape) draft" already
+   exists): what was run, final run count, GitHub and site links, the Word draft attached by Kevin; Kevin sends it himself.
+7. Still open with the lead: seeds 101–120 vs his "101–119"; same 20 seeds for C1–C4; how E and I map to the new numbers.
 
 - The project lead's veto or confirmation of D1–D52, especially the ARF/QTF/TSV definitions (see METHODS §6).
 - HPC cluster details: the sbatch file still has placeholders, and everything has run locally so far.
