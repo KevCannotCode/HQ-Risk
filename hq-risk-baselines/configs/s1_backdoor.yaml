@@ -5,5 +5,5 @@ model: logistic_regression
 datasets: [breast_cancer, digits, wine]
 # intensity = fraction of training rows stamped with the trigger and relabelled to the target class
 intensities: [0, 0.01, 0.02, 0.05, 0.1, 0.2]
-seeds: [0, 1, 2, 3, 4]
+seeds: [0, 1, 2, 3, 4, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120]
 output: results/raw/runs.csv

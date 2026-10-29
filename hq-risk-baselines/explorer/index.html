@@ -175,7 +175,7 @@ footer { margin-top: 28px; }
   <header>
     <div>
       <h1>HQ-Risk Results Explorer</h1>
-      <p class="lede">Attacks on three systems: S1 classical ML, S2 federated learning, S3 QML. Datasets: Breast Cancer, Digits, Wine. 5 seeds per point.</p>
+      <p class="lede">Attacks on three systems: S1 classical ML, S2 federated learning, S3 QML. Datasets: Breast Cancer, Digits, Wine. <span id="lede-seeds"></span></p>
       <p class="muted" id="provenance"></p>
       <nav aria-label="Sections"><a href="#coverage-title">Coverage</a><a href="#sweep-title">Sweeps</a><a href="#ref-title">Reference systems</a><a href="#tables-title">Tables</a><a href="#data-title">Data sources</a></nav>
     </div>
@@ -261,7 +261,7 @@ footer { margin-top: 28px; }
   <button type="button" class="close" id="drill-close" aria-label="Close">✕</button>
   <h3 id="drill-title"></h3>
   <p class="muted" id="drill-sub"></p>
-  <h4>Summary (5 seeds)</h4>
+  <h4 id="drill-summary-title">Summary</h4>
   <div class="table-scroll"><table id="drill-summary"></table></div>
   <h4>Per seed</h4>
   <div class="table-scroll"><table id="drill-runs"></table></div>
@@ -274,6 +274,8 @@ footer { margin-top: 28px; }
 <script>
 "use strict";
 const DATA = window.HQ_DATA;
+document.getElementById("lede-seeds").textContent = DATA.seeds.min === DATA.seeds.max
+  ? `${DATA.seeds.min} seeds per point.` : `${DATA.seeds.min}–${DATA.seeds.max} seeds per point (validation runs in progress).`;
 const SVGNS = "http://www.w3.org/2000/svg";
 
 // ---------- sweep catalogue (labels come from scripts/sweep_catalog.py via data.js) ----------
@@ -356,6 +358,7 @@ function openDrill(key) {
   const part = PARTITIONS[key.partition].label;
   document.getElementById("drill-title").textContent = `${sweep.label} · ${datasetLabel(key.dataset)}${part ? ` · ${part}` : ""}`;
   document.getElementById("drill-sub").textContent = `${sweep.x}: ${sweep.fx(key.intensity)} · model: ${row.model}`;
+  document.getElementById("drill-summary-title").textContent = `Summary (${row.n} seeds)`;
 
   const summary = document.getElementById("drill-summary");
   summary.replaceChildren();
