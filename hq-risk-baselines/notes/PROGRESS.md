@@ -127,18 +127,14 @@ Acted on the project lead's review:
 ## Open items
 
 
-### Next task (2026-10-29, after the validation runs finish)
+### Next task (2026-10-29, after the validation runs finish) — done 13:00 except item 7
 
-1. Rebuild: `build_summary.py` (runs.csv), `build_summary.py --runs results/raw/combined.csv --output results/summary/combined_summary.csv`,
-   `build_tables.py`, `build_explorer.py`, then `check_results.py` without `--partial`.
-2. Paper text (`notes/paper/sections.md`): "5 seeds" → 25 seeds (0–4 and 101–120); run counts 2,130 → 10,650 single-attack + 2,940 combined;
-   one sentence each on the intensity-0 controls and the combined attacks C1–C4 (tables 25–28).
-3. Word draft: regenerate from the lead's original with `fill_paper_docx.py --draft "../update-10-8/fabrice/HQ-Risk Draft paper-Init.docx"
-   --out "../update-10-8/fabrice/HQ-Risk Draft paper-Kevin-validation.docx" --author Kevin`; keep the 10-08 copy untouched.
-4. Commit results + text on `feature/validation-runs`, push, open PR to `main`, merge once the test job is green.
-5. Deploy the explorer: `netlify deploy --prod --dir explorer --site 54039fc9-496a-46e3-9f98-8bd96a78cb61`.
-6. Create a separate Gmail draft to the lead for HQ-Risk only (the SoK draft "SoK: Section VI (Defense Landscape) draft" already
-   exists): what was run, final run count, GitHub and site links, the Word draft attached by Kevin; Kevin sends it himself.
+1. ✔ Rebuilt summary, combined summary, 28 tables, explorer data; `check_results.py` passes without `--partial`.
+2. ✔ Paper text moved to 25 seeds and the new counts, with Setup and Results paragraphs on C1–C4.
+3. ✔ Word draft regenerated: `update-10-8/fabrice/HQ-Risk Draft paper-Kevin-validation.docx` (10-08 copy untouched).
+4. ✔ Commit 9885e36 on `feature/validation-runs`, pushed, PR #3 to `main`.
+5. ✔ Explorer deployed (live data.js reports 25 seeds, table 25 served).
+6. ✔ Separate Gmail draft to the lead for HQ-Risk created; Kevin attaches the Word draft and sends.
 7. Still open with the lead: seeds 101–120 vs his "101–119"; same 20 seeds for C1–C4; how E and I map to the new numbers.
 
 - The project lead's veto or confirmation of D1–D52, especially the ARF/QTF/TSV definitions (see METHODS §6).
