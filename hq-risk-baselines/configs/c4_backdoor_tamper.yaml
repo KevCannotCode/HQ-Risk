@@ -1,0 +1,17 @@
+# C4: backdoor poisoning (layer D) x circuit tampering (layer Q) on QuantumNet. 6 cells x 2 datasets.
+scenario: s3
+attack: combined
+attack_mode: backdoor_tamper
+model: quantum_net
+datasets: [breast_cancer, wine]
+factors:
+  - {attack: backdoor, mode: trigger, levels: [0, 0.05]}
+  - {attack: circuit_tamper, mode: rx_half_pi, levels: [0, 2, 8]}
+seeds: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120]
+quantum:
+  n_qubits: 8
+  shots: 256
+  epochs: 30
+  learning_rate: 0.05
+  batch_size: 16
+output: results/raw/combined.csv

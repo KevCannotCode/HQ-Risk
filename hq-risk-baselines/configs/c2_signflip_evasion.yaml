@@ -1,0 +1,19 @@
+# C2: sign-flip clients (layer F) x FGSM at test time (layer M) x partition, FedAvg 10 clients 30 rounds. 18 cells x 3 datasets.
+scenario: s2
+attack: combined
+attack_mode: signflip_evasion
+model: logistic_regression
+datasets: [breast_cancer, digits, wine]
+partitions: [iid, non_iid]
+factors:
+  - {attack: byzantine, mode: sign_flip, levels: [0, 0.2, 0.4]}
+  - {attack: evasion, mode: fgsm, levels: [0, 0.25, 0.5]}
+seeds: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120]
+federated:
+  n_clients: 10
+  rounds: 30
+  local_epochs: 1
+  learning_rate: 0.3
+  batch_size: 32
+  dirichlet_alpha: 0.5
+output: results/raw/combined.csv

@@ -6,6 +6,31 @@ Live site: https://hq-risk-explorer.netlify.app
 
 ---
 
+## 2026-10-29 — Validation phase: 20 more seeds, controls, and combined attacks (C1–C4)
+
+**Asked for (project lead, email "HQ Risk Paper Update"):** rerun every configuration on 20 new seeds (101–119, "20
+seeds total"), rerun the intensity-0 controls on the same seeds, then a second phase of combined attacks: C1 poisoning ×
+FGSM (S1), C2 sign-flip clients × FGSM × partition (S2), C3 transpiler drift × forged shots × noise (S3), C4 backdoor ×
+circuit tampering (S3). He also notes that E (exploitability) and I (technical impact) can now be computed from the results
+instead of being fixed at 1, and offers the HPC server if the runs are too heavy.
+
+**Done:**
+- Seeds 101–120 added to all 20 sweep files (D53: his range is 19 seeds, his counts need 20). Dry run: 8,520 new runs,
+  the exact total in his email (7,080 attack + 1,440 control).
+- Combined attacks: a run can now carry several factors (`attack: combined` + a `factors` list in the YAML). Four new
+  configs `c1_…`–`c4_…` give 27 + 54 + 54 + 12 = 147 cells, the same counts as his table, on seeds 101–120 (D54–D58).
+  New code paths: poisoned-model FGSM (S1), FGSM against the federated global model (S2), drift→noise→forged-shots and
+  backdoor→tamper (S3). Smoke-tested on Wine, seed 101; a stored noise run was re-executed and matched exactly.
+- Workers: `scripts/run_validation.sh` splits every sweep by (dataset, partition, seed) across 8 local processes, so the
+  quantum clean model is trained once per group; `scripts/validation_progress.py` shows rows done per sweep.
+  Estimated wall time on this machine: about 2 hours (the 5-seed matrix took 2.5 CPU-hours, almost all of it S3).
+- Summary, tables, explorer and the drift check now read the seed count from the data (`n` column) instead of assuming 5,
+  and `check_results.py --partial` lets the site deploy while runs are still in flight. Tables 25–28 (one per block) are
+  built from `combined_summary.csv` once it exists.
+
+**Open:** the E and I mapping (which column feeds which term) is the lead's to confirm; the proposal in
+`notes/paper/sections.md` (Validation protocol) still stands. Whether phase 2 should also use seeds 0–4.
+
 ## 2026-10-08 — Setup and Results for the 6-page paper
 
 **Asked for (project lead, Word draft + WhatsApp):** fill the Setup section of the IEEE draft (how the experiments were run,
@@ -98,6 +123,8 @@ Acted on the project lead's review:
 ---
 
 ## Open items
+
+- Validation runs (D53–D58) in flight; deploy the explorer again when `check_results.py` passes without `--partial`.
 
 - The project lead's veto or confirmation of D1–D52, especially the ARF/QTF/TSV definitions (see METHODS §6).
 - HPC cluster details: the sbatch file still has placeholders, and everything has run locally so far.

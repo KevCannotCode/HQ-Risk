@@ -17,7 +17,7 @@ SERIES_LABELS = {"breast_cancer": "Breast Cancer", "digits": "Digits", "wine": "
 PARTITION_STYLES = {"-": "-", "iid": "-", "non_iid": "--"}
 SURFACE, INK, INK_MUTED, GRID, AXIS = "#fcfcfb", "#0b0b0b", "#898781", "#e1e0d9", "#c3c2b7"
 
-ACCURACY = ("attacked_accuracy", "Accuracy on clean test set (mean ± sd, 5 seeds)")
+ACCURACY = ("attacked_accuracy", "Accuracy on clean test set (mean ± sd over seeds)")
 TARGETED = ("attack_success_rate", "Source-class rows sent to the target class")
 BACKDOOR = ("attack_success_rate", "Triggered rows classified as the target class")
 
