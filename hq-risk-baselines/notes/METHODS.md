@@ -143,6 +143,23 @@ factor the review listed it under. Everything is an implementer default.
 
 ---
 
+## 4d. Validation-phase decisions (D53–D58) — after the project lead's 2026-10-29 plan
+
+The lead asked for the same matrix on 20 more seeds (controls at intensity 0 included) and for a second phase of
+combined attacks (blocks C1–C4). The plan is implemented as written; these are the points it left open.
+
+| # | Point | Decision | Why |
+|---|---|---|---|
+| D53 | Validation seeds | 101–120 (20 seeds) added to every one of the 20 sweeps; seeds 0–4 stay; every aggregate now runs over all 25 seeds. The lead wrote "101–119, 20 seeds total": 101–119 is 19 seeds, so 120 was added to reach his 20 | His run counts (354 × 20 = 7,080 attack runs, 72 × 20 = 1,440 controls) only work with 20 seeds. The intensity-0 row of each sweep is the control, so no separate control sweep exists |
+| D54 | C1 order and metric | Labels poisoned, logistic regression retrained on them, then FGSM computed against *that* model on the test set. Success = correct predictions turned wrong, measured against the clean model's predictions | FGSM is white-box on whatever model is deployed; the deployed model is the poisoned one |
+| D55 | C2 order and metric | Sign-flip clients during the 30 FedAvg rounds, then FGSM against the resulting global model (gradient of the softmax cross-entropy through the global weights). Same success metric as C1 | Same reasoning as D54; the global model is what the attacker queries |
+| D56 | C3 order | Transpiler drift first (the circuit the backend receives), then execution on the noisy backend, then the forged shots replace part of the honest counts. A factor at level 0 is simply absent, so each single-factor cell reproduces the single-attack sweep. The noise model now also names `sx` and `x`, which only exist after transpilation; the untranspiled circuit has none, so every stored noise run reproduces exactly (checked on Wine seed 0) | This is the order of the real pipeline: compile, run, read counts. Naming the compiled basis gates is what makes noise reach a drifted circuit |
+| D57 | C4 metric | Backdoor retrains QuantumNet on the poisoned rows, then RX(π/2) gates are injected into the deployed circuit. Accuracy and drop are on the clean test set; success is the backdoor's own metric (triggered rows read as the target class) under the tampered circuit | The question C4 asks is whether tampering helps or hurts a planted backdoor; accuracy drop already captures the tampering |
+| D58 | Phase-2 seeds and storage | C1–C4 run on seeds 101–120 only (the lead gave no seed count for phase 2; 20 keeps it comparable to phase 1), 2,940 runs. Combined rows go to `results/raw/combined.csv` with one extra column `factors` (`attack:mode=level;…`); the `intensity` column repeats the first factor's level. Their summary is `results/summary/combined_summary.csv`, their tables 25–28 | `runs.csv` keeps its schema and every existing run_id; the factors column is what identifies a cell |
+
+Run counts after this phase: 426 configurations × 25 seeds = 10,650 single-attack runs (8,520 new), plus 147 combined
+cells × 20 seeds = 2,940, total 13,590. Executed locally with `scripts/run_validation.sh` (8 workers, one process each).
+
 ## 5. Reproducibility
 
 - All randomness comes from `numpy.random.default_rng([seed, k])` streams keyed by seed and role (partition, client id, poisoning row choice) or from `random_state=seed` in scikit-learn. No global RNG.

@@ -42,7 +42,7 @@ class ExperimentRunner:
         return self._row(config, clean.accuracy, attacked, outcome.attack_success_rate, time.perf_counter() - started)
 
     def _row(self, config: RunConfig, clean_accuracy: float, attacked, attack_success_rate, seconds: float) -> dict:
-        return {
+        row = {
             "run_id": config.run_id(),
             "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "scenario": config.scenario,
@@ -66,6 +66,9 @@ class ExperimentRunner:
             "git_commit": self._git_commit(),
             "config_hash": config.config_hash(),
         }
+        if config.factors is not None:
+            row["factors"] = config.factors_text()
+        return row
 
     def _fingerprint(self, x: np.ndarray, y: np.ndarray) -> str:
         return hashlib.sha256(x.tobytes() + y.tobytes()).hexdigest()

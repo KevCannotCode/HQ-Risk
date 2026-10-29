@@ -98,6 +98,23 @@ SWEEPS = [
          note="Malicious pass swaps qubits before readout without tracking the layout."),
 ]
 
+# Combined-attack blocks (second validation phase). Factors are applied in the listed order; see METHODS D53–D57.
+COMBINED = [
+    dict(id="c1_poison_evasion", block="C1", scenario="s1", title="C1 · symmetric poisoning × FGSM evasion",
+         factors=[("poisoning", "symmetric", "Poisoning rate", "fraction"), ("evasion", "fgsm", "FGSM ε", "number")],
+         success=FLIPPED, note="Logistic regression trained on the poisoned labels, then FGSM against that model at test time."),
+    dict(id="c2_signflip_evasion", block="C2", scenario="s2", title="C2 · sign-flip clients × FGSM evasion",
+         factors=[("byzantine", "sign_flip", "Sign-flip clients", "fraction"), ("evasion", "fgsm", "FGSM ε", "number")],
+         success=FLIPPED, note="FedAvg, 10 clients, 30 rounds; FGSM against the resulting global model at test time."),
+    dict(id="c3_drift_shots_noise", block="C3", scenario="s3", title="C3 · transpiler drift × forged shots × backend noise",
+         factors=[("transpiler", "angle_drift", "RZ drift (rad)", "number"), ("shot_bias", "forged_bitstring", "Forged shots", "fraction"),
+                  ("noise", "depolarizing_readout", "Error p", "number")],
+         success=FLIPPED, note="Clean QuantumNet compiled through the drifting pass, run on the noisy backend, then shots forged."),
+    dict(id="c4_backdoor_tamper", block="C4", scenario="s3", title="C4 · backdoor poisoning × circuit tampering",
+         factors=[("backdoor", "trigger", "Triggered training rows", "fraction"), ("circuit_tamper", "rx_half_pi", "Injected RX(π/2) gates", "count")],
+         success=BACKDOOR, note="QuantumNet retrained on the poisoned rows, then gates injected into the deployed circuit."),
+]
+
 METRIC_LABELS = {
     "clean_accuracy": ("Clean accuracy", "%"),
     "attacked_accuracy": ("Accuracy", "%"),

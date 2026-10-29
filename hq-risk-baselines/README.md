@@ -24,7 +24,12 @@ One command per sweep; every YAML in `configs/` is a sweep. Each appends to `res
 ```bash
 for c in configs/*.yaml; do OMP_NUM_THREADS=1 python scripts/run_sweep.py --config $c --skip-existing; done
 python scripts/verify_quantum.py          # torch simulator == Qiskit Statevector, training reproducible
+scripts/run_validation.sh 8               # same thing with 8 local workers, restartable
+python scripts/validation_progress.py     # rows done per sweep
 ```
+
+Combined attacks (`configs/c1_…`–`c4_…`, `attack: combined`) list `factors` instead of `intensities`; every combination of
+levels is one run, written to `results/raw/combined.csv` (METHODS D54–D58).
 
 Then aggregate, plot, and fill the project lead's table:
 

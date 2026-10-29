@@ -13,7 +13,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.build_summary import GROUP_KEYS, METRICS, load_latest_per_run
-from scripts.build_tables import build_all
+from scripts.build_tables import build_all, load_combined
 from scripts.sweep_catalog import SWEEPS
 
 
@@ -21,6 +21,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs", default="results/raw/runs.csv")
     parser.add_argument("--summary", default="results/summary/summary.csv")
+    parser.add_argument("--combined-runs", default="results/raw/combined.csv")
+    parser.add_argument("--combined", default="results/summary/combined_summary.csv")
     parser.add_argument("--tables", default="results/tables")
     parser.add_argument("--output", default="explorer/data.js")
     return parser.parse_args()
@@ -50,11 +52,17 @@ def main() -> None:
     summary = pd.read_csv(args.summary)
     summary["partition"] = summary["partition"].fillna("-")
     runs = load_latest_per_run(args.runs)[["run_id"] + GROUP_KEYS + ["seed"] + METRICS]
-    tables = build_all(summary)
+    combined = load_combined(args.combined)
+    tables = build_all(summary, combined)
     site = Path(args.output).parent
-    sources = [Path(args.runs), Path(args.summary)] + [Path(args.tables) / t["file"] for t in tables] + [Path(args.tables) / "tables.md"]
+    sources = [Path(args.runs), Path(args.summary)]
+    if combined is not None:
+        sources += [Path(args.combined_runs), Path(args.combined)]
+    sources += [Path(args.tables) / t["file"] for t in tables] + [Path(args.tables) / "tables.md"]
     payload = {
         "summary": records(summary), "runs": records(runs), "sweeps": SWEEPS, "tables": tables,
+        "seeds": {"min": int(summary["n"].min()), "max": int(summary["n"].max())},
+        "combined": records(combined) if combined is not None else [],
         "files": publish(sources, site), "commit": str(pd.read_csv(args.runs)["git_commit"].iloc[-1]),
     }
     Path(args.output).write_text("window.HQ_DATA = " + json.dumps(payload, separators=(",", ":"), ensure_ascii=False) + ";\n")

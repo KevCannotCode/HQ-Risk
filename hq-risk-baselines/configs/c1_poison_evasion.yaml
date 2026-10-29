@@ -1,0 +1,11 @@
+# C1: symmetric poisoning (layer D) x FGSM evasion (layer M) on the central logistic regression. 9 cells x 3 datasets.
+scenario: s1
+attack: combined
+attack_mode: poison_evasion
+model: logistic_regression
+datasets: [breast_cancer, digits, wine]
+factors:
+  - {attack: poisoning, mode: symmetric, levels: [0, 0.2, 0.4]}
+  - {attack: evasion, mode: fgsm, levels: [0, 0.25, 0.5]}
+seeds: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120]
+output: results/raw/combined.csv
