@@ -13,9 +13,9 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.build_reference_table import SYSTEMS, sweep_rows
-from scripts.sweep_catalog import DATASETS, METRIC_LABELS, PARTITIONS, SWEEPS
+from scripts.sweep_catalog import COMBINED, DATASETS, METRIC_LABELS, PARTITIONS, SWEEPS
 
-SEEDS_NOTE = "Values are mean ± SD over 5 seeds."
+SEEDS_NOTE = "Values are mean ± SD over 5 seeds."  # rewritten by build_all from the summary's n column
 ABBREVIATIONS = {
     "SD": "standard deviation", "pp": "percentage points", "IID": "independent and identically distributed",
     "FGSM": "fast gradient sign method", "TSV": "transpiler supply-chain vector", "ARF": "adversarial-AI factor",
@@ -33,6 +33,7 @@ REFERENCE_SUCCESS = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--summary", default="results/summary/summary.csv")
+    parser.add_argument("--combined", default="results/summary/combined_summary.csv", help="skipped when the file does not exist")
     parser.add_argument("--output", default="results/tables")
     return parser.parse_args()
 
@@ -161,15 +162,55 @@ def compact_table(summary: pd.DataFrame, number: int, partition: str = "iid") ->
             "abbreviations": footnote(caption, note, " ".join(s[0] for s in SYSTEMS)), "groups": None, "columns": columns, "rows": body}
 
 
-def build_all(summary: pd.DataFrame) -> list[dict]:
+def seeds_note(summary: pd.DataFrame) -> str:
+    low, high = int(summary["n"].min()), int(summary["n"].max())
+    return f"Values are mean ± SD over {low} seeds." if low == high else f"Values are mean ± SD over {low}–{high} seeds (runs still in progress)."
+
+
+def combined_table(combined: pd.DataFrame, block: dict, number: int) -> dict:
+    rows = combined[(combined["scenario"] == block["scenario"]) & (combined["attack_mode"] == block["id"].split("_", 1)[1])]
+    rows = rows.assign(levels=rows["factors"].map(lambda f: tuple(float(part.split("=")[1]) for part in f.split(";"))))
+    partitions = ["iid", "non_iid"] if block["scenario"] == "s2" else ["-"]
+    datasets = [d for d in DATASETS if d in set(rows["dataset"])]
+    metrics = ["attacked_accuracy", "accuracy_drop_pp", "attack_success_rate"]
+    lead = (["Partition"] if len(partitions) > 1 else []) + [f[2] for f in block["factors"]]
+    groups = [{"text": "", "span": len(lead)}] + [{"text": DATASETS[d], "span": len(metrics)} for d in datasets]
+    columns = lead + [metric_header(m) for _ in datasets for m in metrics]
+    body = []
+    for part in partitions:
+        for levels in sorted(set(rows["levels"])):
+            line = ([cell(PARTITIONS[part])] if len(partitions) > 1 else []) + [cell(intensity(v, f[3])) for v, f in zip(levels, block["factors"])]
+            for d in datasets:
+                match = rows[(rows["dataset"] == d) & (rows["partition"] == part) & (rows["levels"] == levels)]
+                for m in metrics:
+                    line.append(cell(value(match.iloc[0], m)) if len(match) else cell("not run"))
+            body.append(line)
+    note = f"{block['note']} Success: {block['success']}. Drop: clean minus attacked accuracy. Rows are in combined.csv. {SEEDS_NOTE}"
+    caption = f"{block['title']}: accuracy, drop and success for every combination of levels"
+    return {"number": number, "id": block["id"], "sweep": None, "caption": caption, "note": note,
+            "abbreviations": footnote(caption, note, *columns), "groups": groups, "columns": columns, "rows": body}
+
+
+def build_all(summary: pd.DataFrame, combined: pd.DataFrame | None = None) -> list[dict]:
+    global SEEDS_NOTE
     summary = summary.copy()
     summary["partition"] = summary["partition"].fillna("-")
+    SEEDS_NOTE = seeds_note(summary)
     tables = [reference_table(summary, d, i + 1) for i, d in enumerate(DATASETS)]
     tables += [sweep_table(summary, s, len(tables) + i + 1) for i, s in enumerate(SWEEPS)]
     tables.append(compact_table(summary, len(tables) + 1))
+    if combined is not None and len(combined):
+        combined = combined.copy()
+        combined["partition"] = combined["partition"].fillna("-")
+        SEEDS_NOTE = seeds_note(combined)
+        tables += [combined_table(combined, b, len(tables) + i + 1) for i, b in enumerate(COMBINED)]
     for t in tables:
         t["file"] = f"table_{t['number']:02d}_{t['id']}.csv"
     return tables
+
+
+def load_combined(path: str) -> pd.DataFrame | None:
+    return pd.read_csv(path) if Path(path).exists() else None
 
 
 def flat_columns(table: dict) -> list[str]:
@@ -200,7 +241,7 @@ def markdown(tables: list[dict]) -> str:
 
 def main() -> None:
     args = parse_args()
-    tables = build_all(pd.read_csv(args.summary))
+    tables = build_all(pd.read_csv(args.summary), load_combined(args.combined))
     folder = Path(args.output)
     folder.mkdir(parents=True, exist_ok=True)
     for old in folder.glob("table_*.csv"):

@@ -1,0 +1,18 @@
+# C3: transpiler angle drift x forged shots x backend noise, all layer Q, on the clean QuantumNet. 27 cells x 2 datasets.
+scenario: s3
+attack: combined
+attack_mode: drift_shots_noise
+model: quantum_net
+datasets: [breast_cancer, wine]
+factors:
+  - {attack: transpiler, mode: angle_drift, levels: [0, 0.1, 0.4]}
+  - {attack: shot_bias, mode: forged_bitstring, levels: [0, 0.1, 0.3]}
+  - {attack: noise, mode: depolarizing_readout, levels: [0, 0.02, 0.1]}
+seeds: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120]
+quantum:
+  n_qubits: 8
+  shots: 256
+  epochs: 30
+  learning_rate: 0.05
+  batch_size: 16
+output: results/raw/combined.csv

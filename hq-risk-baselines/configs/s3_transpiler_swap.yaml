@@ -5,7 +5,7 @@ model: quantum_net
 datasets: [breast_cancer, digits, wine]
 # intensity = SWAP gates a compromised routing pass inserts before readout
 intensities: [0, 1, 2, 3, 4]
-seeds: [0, 1, 2, 3, 4]
+seeds: [0, 1, 2, 3, 4, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120]
 quantum:
   n_qubits: 8
   shots: 256

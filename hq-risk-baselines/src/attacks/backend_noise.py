@@ -6,7 +6,7 @@ from qiskit_aer.noise import NoiseModel, ReadoutError, depolarizing_error
 
 
 class BackendNoiseAttack:
-    SINGLE_QUBIT_GATES = ["rx", "ry", "rz"]
+    SINGLE_QUBIT_GATES = ["rx", "ry", "rz", "sx", "x"]  # sx/x only exist after transpilation (combined C3, D56)
     TWO_QUBIT_GATES = ["cx"]
 
     def noise_model(self, probability: float) -> NoiseModel:

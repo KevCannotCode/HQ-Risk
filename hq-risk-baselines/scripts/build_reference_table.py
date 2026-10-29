@@ -79,7 +79,7 @@ def main() -> None:
     summary["partition"] = summary["partition"].fillna("-")
 
     lines = [
-        f"# Reference systems — real numbers ({args.dataset}, 5 seeds, mean ± sd)",
+        f"# Reference systems — real numbers ({args.dataset}, mean ± sd over {int(summary['n'].min())}–{int(summary['n'].max())} seeds)",
         "",
         f"Every attacked system is at the strongest point of its sweep. Federated rows use the {args.partition} partition. "
         "QML rows are evaluated on Qiskit Aer, 256 shots. ARF = adversarial-AI factor, QTF · TSV = quantum-threat factor, transpiler / supply chain.",

@@ -4,6 +4,8 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 
+from src.models import SoftmaxRegression
+
 
 class FgsmAttack:
     def perturb(self, model, x: np.ndarray, y: np.ndarray, epsilon: float) -> np.ndarray:
@@ -17,6 +19,8 @@ class FgsmAttack:
             return self._logistic_regression_gradient(model, x, y)
         if isinstance(model, MLPClassifier):
             return self._mlp_gradient(model, x, y)
+        if isinstance(model, SoftmaxRegression):
+            return self._softmax_gradient(model, x, y)
         raise TypeError(f"no gradient available for {type(model).__name__}")
 
     def _logistic_regression_gradient(self, model: LogisticRegression, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -33,6 +37,13 @@ class FgsmAttack:
         residual = self._output_residual(model.predict_proba(x), y, model.classes_)
         hidden_gradient = (residual @ output_weights.T) * (pre_activation > 0)
         return hidden_gradient @ hidden_weights.T
+
+    def _softmax_gradient(self, model: SoftmaxRegression, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        # Cross-entropy gradient of the federated global model: (p - onehot(y)) @ W^T.
+        probabilities = model.probabilities(x)
+        targets = np.zeros_like(probabilities)
+        targets[np.arange(len(y)), y] = 1.0
+        return (probabilities - targets) @ model.weights.T
 
     def _output_residual(self, probabilities: np.ndarray, y: np.ndarray, classes: np.ndarray) -> np.ndarray:
         class_index = np.searchsorted(classes, y)

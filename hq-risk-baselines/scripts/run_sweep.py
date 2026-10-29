@@ -1,4 +1,5 @@
-"""Run every configuration in one YAML sweep. --shard/--num-shards lets an HPC array split the work."""
+"""Run every configuration in one YAML sweep. --shard/--num-shards splits the work between workers or HPC array tasks.
+Shards are cut by (dataset, partition, seed), so every run that shares a clean model lands in the same worker."""
 
 import argparse
 import csv
@@ -23,6 +24,12 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def shard(runs: list, index: int, count: int) -> list:
+    groups = sorted({(r.dataset, r.partition or "", r.seed) for r in runs})
+    mine = {group for position, group in enumerate(groups) if position % count == index}
+    return [r for r in runs if (r.dataset, r.partition or "", r.seed) in mine]
+
+
 def existing_run_ids(path: Path) -> set[str]:
     if not path.exists():
         return set()
@@ -34,7 +41,7 @@ def main() -> None:
     args = parse_args()
     sweep = SweepConfig(args.config)
     output = Path(args.output or sweep.output)
-    runs = sweep.runs()[args.shard :: args.num_shards]
+    runs = shard(sweep.runs(), args.shard, args.num_shards)
     if args.skip_existing:
         done = existing_run_ids(output)
         runs = [config for config in runs if config.run_id() not in done]
@@ -42,10 +49,10 @@ def main() -> None:
 
     if args.dry_run:
         for config in runs:
-            print(f"  {config.dataset:14s} {config.partition or '-':8s} intensity={config.intensity:<5} seed={config.seed}")
+            print(f"  {config.dataset:14s} {config.partition or '-':8s} intensity={config.intensity:<5} seed={config.seed} {config.factors_text() or ''}")
         return
 
-    writer = ResultWriter(output)
+    writer = ResultWriter(output, ResultWriter.COMBINED_COLUMNS if sweep.combined else None)
     runner = ExperimentRunner()
     for index, config in enumerate(runs, start=1):
         row = runner.run(config)

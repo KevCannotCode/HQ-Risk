@@ -24,6 +24,8 @@ class RunConfig:
     n_qubits: int | None = None
     shots: int | None = None
     epochs: int | None = None
+    # Combined runs only (attack == COMBINED): ((attack, attack_mode, level), ...) applied in that order.
+    factors: tuple[tuple[str, str, float], ...] | None = None
 
     S1 = "s1"
     S2 = "s2"
@@ -39,11 +41,24 @@ class RunConfig:
     EXTRACTION = "extraction"
     MEMBERSHIP = "membership"
     INVERSION = "inversion"
+    COMBINED = "combined"
     # Attacks that only query the deployed model; they never change what it predicts.
     QUERY_ATTACKS = (EXTRACTION, MEMBERSHIP, INVERSION)
     ATTACKS = (POISONING, EVASION, BYZANTINE, CIRCUIT_TAMPER, SHOT_BIAS, NOISE, TRANSPILER, BACKDOOR, *QUERY_ATTACKS)
-    # Added for S3; left out of the hash when unset so every S1/S2 run_id already in runs.csv is unchanged.
-    _S3_FIELDS = ("n_qubits", "shots", "epochs")
+    # Added after the first runs; left out of the hash when unset so every run_id already in runs.csv is unchanged.
+    _OPTIONAL_FIELDS = ("n_qubits", "shots", "epochs", "factors")
+
+    def factor_level(self, attack: str, attack_mode: str) -> float:
+        """Level of one factor of a combined run; 0 when the factor is absent."""
+        for factor_attack, factor_mode, level in self.factors or ():
+            if (factor_attack, factor_mode) == (attack, attack_mode):
+                return float(level)
+        return 0.0
+
+    def factors_text(self) -> str | None:
+        if self.factors is None:
+            return None
+        return ";".join(f"{attack}:{mode}={level:g}" for attack, mode, level in self.factors)
 
     def config_hash(self) -> str:
         fields = asdict(self)
@@ -54,5 +69,5 @@ class RunConfig:
         return self._digest(asdict(self))
 
     def _digest(self, fields: dict) -> str:
-        fields = {key: value for key, value in fields.items() if not (key in self._S3_FIELDS and value is None)}
+        fields = {key: value for key, value in fields.items() if not (key in self._OPTIONAL_FIELDS and value is None)}
         return hashlib.sha256(json.dumps(fields, sort_keys=True).encode()).hexdigest()[:12]

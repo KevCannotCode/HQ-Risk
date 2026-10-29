@@ -40,6 +40,8 @@ class QuantumScenario:
             return QueryAttacks().run(config, data, QuantumClassifier(net, encoder, config.shots, config.seed), clean_pred)
         if config.attack == RunConfig.BACKDOOR:
             return self._backdoor(config, data, clean_pred)
+        if config.attack == RunConfig.COMBINED:
+            return self._combined(config, data, net, encoder, x_test, clean_pred)
         if config.intensity == 0:
             return Outcome(clean_pred, clean_pred)
 
@@ -92,3 +94,44 @@ class QuantumScenario:
             return noisy.counts(net, x_test, config.shots)
 
         raise ValueError(f"unknown S3 attack {config.attack!r}")
+
+    def _combined(self, config: RunConfig, data: DatasetSplit, net: QuantumNet, encoder: PcaAngleEncoder, x_test: np.ndarray, clean_pred: np.ndarray) -> Outcome:
+        if config.factor_level(RunConfig.BACKDOOR, "trigger") > 0 or config.factor_level(RunConfig.CIRCUIT_TAMPER, "rx_half_pi") > 0 \
+                or config.attack_mode == "backdoor_tamper":
+            return self._combined_backdoor_tamper(config, data, net, encoder, clean_pred)
+        return self._combined_execution(config, data, net, x_test, clean_pred)
+
+    def _combined_execution(self, config: RunConfig, data: DatasetSplit, net: QuantumNet, x_test: np.ndarray, clean_pred: np.ndarray) -> Outcome:
+        """C3: compromised transpiler (angle drift), then a noisier backend, then forged shots, in that order (D56)."""
+        drift = config.factor_level(RunConfig.TRANSPILER, TranspilerAttack.ANGLE_DRIFT)
+        noise = config.factor_level(RunConfig.NOISE, "depolarizing_readout")
+        bias = config.factor_level(RunConfig.SHOT_BIAS, "forged_bitstring")
+        rng = np.random.default_rng([config.seed, 0])
+
+        circuit = TranspilerAttack().compile(net.circuit, TranspilerAttack.ANGLE_DRIFT, drift, rng) if drift > 0 else None
+        noise_model = BackendNoiseAttack().noise_model(noise) if noise > 0 else None
+        shot_attack = ShotBiasAttack()
+        forged = shot_attack.forged_shots(config.shots, bias)
+        executor = ShotExecutor(seed=config.seed, noise_model=noise_model)
+        counts = executor.counts(net, x_test, config.shots - forged, circuit=circuit)
+        if forged > 0:
+            target_label = 1 - data.positive_label if data.positive_label is not None else 0
+            counts = shot_attack.falsify(counts, shot_attack.target_bitstring(net, target_label), forged)
+        attacked_pred = ShotExecutor(seed=config.seed).predict(net, counts)
+        return Outcome(clean_pred, attacked_pred, self.metrics.attack_success_rate(data.y_test, clean_pred, attacked_pred))
+
+    def _combined_backdoor_tamper(self, config: RunConfig, data: DatasetSplit, net: QuantumNet, encoder: PcaAngleEncoder, clean_pred: np.ndarray) -> Outcome:
+        """C4: backdoor poisoning retrains the circuit, then RX(pi/2) gates are injected into the deployed circuit.
+        Success is the backdoor's own metric (triggered rows read as the target class) (D57)."""
+        poison = config.factor_level(RunConfig.BACKDOOR, "trigger")
+        n_gates = int(config.factor_level(RunConfig.CIRCUIT_TAMPER, "rx_half_pi"))
+        rng = np.random.default_rng([config.seed, 0])
+        backdoor = BackdoorAttack(data.target_label)
+        if poison > 0:
+            x_poisoned, y_poisoned = backdoor.poison(data.x_train, data.y_train, poison, rng)
+            net, encoder = self._train(config, x_poisoned, y_poisoned, data.n_classes)
+        circuit = CircuitTamperAttack().apply(net.circuit, n_gates, rng) if n_gates > 0 else None
+        executor = ShotExecutor(seed=config.seed)
+        attacked_pred = executor.predict(net, executor.counts(net, encoder.transform(data.x_test), config.shots, circuit=circuit))
+        triggered_pred = executor.predict(net, executor.counts(net, encoder.transform(backdoor.stamp(data.x_test)), config.shots, circuit=circuit))
+        return Outcome(clean_pred, attacked_pred, self.metrics.targeted_success_rate(data.y_test, triggered_pred, data.target_label))

@@ -26,6 +26,8 @@ class ClassicalScenario:
 
         if config.attack in RunConfig.QUERY_ATTACKS:
             return QueryAttacks().run(config, data, clean_model, clean_pred)
+        if config.attack == RunConfig.COMBINED:
+            return self._combined(config, data, clean_model, clean_pred)
         if config.attack == RunConfig.BACKDOOR:
             return self._backdoor(config, data, clean_model, clean_pred)
         if config.attack == RunConfig.POISONING:
@@ -58,3 +60,15 @@ class ClassicalScenario:
             model = self.factory.create(config.model, config.seed).fit(x_poisoned, y_poisoned)
         triggered_pred = model.predict(backdoor.stamp(data.x_test))
         return Outcome(clean_pred, model.predict(data.x_test), self.metrics.targeted_success_rate(data.y_test, triggered_pred, data.target_label))
+
+    def _combined(self, config: RunConfig, data: DatasetSplit, clean_model, clean_pred: np.ndarray) -> Outcome:
+        """Training-time poisoning first, then FGSM against the model that was actually deployed (D54)."""
+        poison = config.factor_level(RunConfig.POISONING, LabelFlipAttack.SYMMETRIC)
+        epsilon = config.factor_level(RunConfig.EVASION, "fgsm")
+        rng = np.random.default_rng([config.seed, 0])
+        model = clean_model
+        if poison > 0:
+            poisoned_labels = LabelFlipAttack(LabelFlipAttack.SYMMETRIC).apply(data.y_train, poison, data.n_classes, rng)
+            model = self.factory.create(config.model, config.seed).fit(data.x_train, poisoned_labels)
+        attacked_pred = model.predict(FgsmAttack().perturb(model, data.x_test, data.y_test, epsilon))
+        return Outcome(clean_pred, attacked_pred, self.metrics.attack_success_rate(data.y_test, clean_pred, attacked_pred))
