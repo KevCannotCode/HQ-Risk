@@ -497,7 +497,7 @@ function renderSweep() {
   if (state.seeds) {
     for (const s of shown) {
       s.seeds.forEach(d => {
-        const jitter = ((d.seed - 2) * 3) * (s.dash ? -1 : 1);
+        const jitter = ((d.seed % 5 - 2) * 3) * (s.dash ? -1 : 1);
         svg.append(el("circle", { cx: X(d.x) + jitter, cy: Y(d.y), r: 2.5, fill: s.color, opacity: 0.45 }));
       });
     }

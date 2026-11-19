@@ -6,6 +6,24 @@ Live site: https://hq-risk-explorer.netlify.app
 
 ---
 
+## 2026-11-19 — Published results on seeds 101–120 only
+
+**Asked for (project lead, WhatsApp 2026-11-16):** the results should come from the validation seeds alone.
+
+**Done:**
+- Every sweep file lists seeds 101–120; `runs.csv` holds 8,520 runs (426 configurations × 20 seeds, 72 of them
+  intensity-0 controls with a 0.0 pp drop on every run). `combined.csv` is unchanged (2,940 runs, same 20 seeds).
+  Total 11,460 runs.
+- Summary, reference table, figures, 28 tables and the explorer data rebuilt; `check_results.py` passes.
+- Paper text (`notes/paper/sections.md`) moved to 20 seeds and the new counts; six ranges in Results shifted by
+  1–2 points with the new means. METHODS section 7 now points to the generated tables instead of typed numbers.
+- Explorer: per-seed dots are spread by `seed % 5`, so they sit next to their point for any seed range.
+- The commit hashes quoted in this log were refreshed after the history was rewritten.
+
+**Settled with the lead:** seed range 101–120; C1–C4 on the same 20 seeds.
+
+---
+
 ## 2026-10-29 — Validation phase: 20 more seeds, controls, and combined attacks (C1–C4)
 
 **Completed 12:48 (8 local workers, 1 h 33 min):** 13,590 runs asked, 13,590 done, no worker errors. `runs.csv` 10,650 distinct runs (426 configurations × 25 seeds, 72 of them intensity-0 controls with a 0.0 pp drop on every run), `combined.csv` 2,940 runs (147 configurations × 20 seeds). `check_results.py` passes without `--partial`: 28 tables, explorer data, 33 served files. Paper text in `notes/paper/sections.md` moved to 25 seeds and the new counts, with a Setup paragraph and a Results paragraph on C1–C4; Word draft regenerated as `update-10-8/fabrice/HQ-Risk Draft paper-Kevin-validation.docx`.
@@ -99,7 +117,7 @@ tables in a format usable in the paper (reference: the Cureus QFML/blockchain EH
 - Tested in headless Chromium on desktop (1280 px) and phone (390 px) widths: no console errors, no horizontal scroll.
   All 1,068 clickable table cells open a 5-seed breakdown.
 
-## 2026-09-24 — Full framework coverage (commits f002bf1, 714b91b)
+## 2026-09-24 — Full framework coverage (commits ec34c06, 410779c)
 
 Acted on the project lead's review:
 - Added the Digits dataset to QML (S3) and the Wine dataset to federated learning (S2).
@@ -110,14 +128,14 @@ Acted on the project lead's review:
 - The ARF, QTF and TSV definitions are this implementation's reading of the review and still need the project lead's
   confirmation.
 
-## 2026-09-23 — S3 QML and the explorer (commits 3b2add5, cb12e3f, 13c4092, 4a8d6e5)
+## 2026-09-23 — S3 QML and the explorer (commits cb64193, 2293091, 91b86fa, 42dd1ba)
 
 - S3 uses the project lead's QuantumNet circuit, trained with Adam using exact statevector gradients and evaluated on
   Qiskit Aer at 256 shots.
 - Three S3 attacks: circuit tampering, shot manipulation and noise. Decisions D31–D40.
 - Static results explorer, deployed on Netlify.
 
-## 2026-09-07 — S1 and S2 baselines (commits d2aeab4 … a94cd5a)
+## 2026-09-07 — S1 and S2 baselines (commits e89d4c3 … bf172bc)
 
 - Classical ML (S1) and federated FedAvg (S2) harness covering poisoning, FGSM evasion and Byzantine clients. 375 runs.
 - Decisions D1–D30. The one-pager was published.
@@ -132,10 +150,10 @@ Acted on the project lead's review:
 1. ✔ Rebuilt summary, combined summary, 28 tables, explorer data; `check_results.py` passes without `--partial`.
 2. ✔ Paper text moved to 25 seeds and the new counts, with Setup and Results paragraphs on C1–C4.
 3. ✔ Word draft regenerated: `update-10-8/fabrice/HQ-Risk Draft paper-Kevin-validation.docx` (10-08 copy untouched).
-4. ✔ Commit 9885e36 on `feature/validation-runs`, pushed, PR #3 to `main`.
+4. ✔ Commit e4b2502 on `feature/validation-runs`, pushed, PR #3 to `main`.
 5. ✔ Explorer deployed (live data.js reports 25 seeds, table 25 served).
 6. ✔ Separate Gmail draft to the lead for HQ-Risk created; Kevin attaches the Word draft and sends.
-7. Still open with the lead: seeds 101–120 vs his "101–119"; same 20 seeds for C1–C4; how E and I map to the new numbers.
+7. Still open with the lead: how E and I map to the new numbers (seeds settled on 2026-11-19).
 
 - The project lead's veto or confirmation of D1–D52, especially the ARF/QTF/TSV definitions (see METHODS §6).
 - HPC cluster details: the sbatch file still has placeholders, and everything has run locally so far.
