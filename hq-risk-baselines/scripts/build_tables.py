@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.build_reference_table import SYSTEMS, sweep_rows
 from scripts.sweep_catalog import COMBINED, DATASETS, METRIC_LABELS, PARTITIONS, SWEEPS
 
-SEEDS_NOTE = "Values are mean ± SD over 5 seeds."  # rewritten by build_all from the summary's n column
+SEEDS_NOTE = "Values are mean ± SD over 20 seeds."  # rewritten by build_all from the summary's n column
 ABBREVIATIONS = {
     "SD": "standard deviation", "pp": "percentage points", "IID": "independent and identically distributed",
     "FGSM": "fast gradient sign method", "TSV": "transpiler supply-chain vector", "ARF": "adversarial-AI factor",

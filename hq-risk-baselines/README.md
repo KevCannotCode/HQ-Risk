@@ -51,11 +51,11 @@ python scripts/fill_paper_docx.py --draft <draft.docx> --out <filled.docx> --aut
 One point, for debugging:
 
 ```bash
-python scripts/run_single.py --scenario s1 --dataset breast_cancer --attack poisoning --attack-mode symmetric --intensity 0.2 --seed 0
-python scripts/run_single.py --scenario s2 --dataset digits --attack byzantine --attack-mode label_flip --intensity 0.3 --partition non_iid --seed 0
-python scripts/run_single.py --scenario s3 --dataset breast_cancer --model quantum_net --attack shot_bias --attack-mode forged_bitstring --intensity 0.2 --seed 0
-python scripts/run_single.py --scenario s1 --dataset digits --attack backdoor --attack-mode trigger --intensity 0.05 --seed 0
-python scripts/run_single.py --scenario s3 --dataset wine --model quantum_net --attack transpiler --attack-mode angle_drift --intensity 0.2 --seed 0
+python scripts/run_single.py --scenario s1 --dataset breast_cancer --attack poisoning --attack-mode symmetric --intensity 0.2 --seed 101
+python scripts/run_single.py --scenario s2 --dataset digits --attack byzantine --attack-mode label_flip --intensity 0.3 --partition non_iid --seed 101
+python scripts/run_single.py --scenario s3 --dataset breast_cancer --model quantum_net --attack shot_bias --attack-mode forged_bitstring --intensity 0.2 --seed 101
+python scripts/run_single.py --scenario s1 --dataset digits --attack backdoor --attack-mode trigger --intensity 0.05 --seed 101
+python scripts/run_single.py --scenario s3 --dataset wine --model quantum_net --attack transpiler --attack-mode angle_drift --intensity 0.2 --seed 101
 ```
 
 Running several sweeps at once: set `OMP_NUM_THREADS=1` per process, otherwise torch threads fight and QML training slows ~30×.
@@ -65,7 +65,7 @@ Running several sweeps at once: set `OMP_NUM_THREADS=1` per process, otherwise t
 ## Results explorer
 
 `explorer/index.html` is a static page for browsing every sweep and the reference-system table interactively. Live: https://hq-risk-explorer.netlify.app
-Every value on it opens a drill-through (5-seed summary, per-seed rows, source file and filter, CSV download).
+Every value on it opens a drill-through (20-seed summary, per-seed rows, source file and filter, CSV download).
 It also shows the paper tables and serves the source CSVs under `explorer/data/`.
 Refresh after new runs, then deploy the folder (`netlify.toml` publishes `explorer/`):
 

@@ -1,31 +1,31 @@
-# Reference systems — real numbers (breast_cancer, 5 seeds, mean ± sd)
+# Reference systems — real numbers (breast_cancer, mean ± sd over 20 seeds)
 
 Every attacked system is at the strongest point of its sweep. Federated rows use the iid partition. QML rows are evaluated on Qiskit Aer, 256 shots. ARF = adversarial-AI factor, QTF · TSV = quantum-threat factor, transpiler / supply chain.
 
 | System | Intensity | Clean accuracy (%) | Attacked accuracy (%) | Attack success (%) | Accuracy drop (pp) | HQ-Risk |
 |---|---|---|---|---|---|---|
-| Clean ML | none | 97.0 ± 2.0 | 97.0 ± 2.0 | — | 0.0 ± 0.0 | |
-| Poisoned ML | 0.4 | 97.0 ± 2.0 | 74.4 ± 1.7 | — undefined (D10) | 22.6 ± 2.7 | |
-| Targeted-poisoned ML | 0.4 | 97.0 ± 2.0 | 80.7 ± 2.1 | 52.4 ± 5.6 (source rows → target class) | 16.3 ± 2.4 | |
-| Evaded ML | 1 | 97.0 ± 2.0 | 6.1 ± 2.1 | 93.7 ± 2.2 (correct → wrong) | 90.9 ± 3.4 | |
-| Backdoored ML (ARF) | 0.2 | 97.0 ± 2.0 | 90.5 ± 2.3 | 93.8 ± 6.2 (triggered rows → target class) | 6.5 ± 2.3 | |
-| Stolen ML (ARF) | 1000 | 97.0 ± 2.0 | 96.8 ± 1.7 | 99.1 ± 0.6 (fidelity of stolen copy) | 0.2 ± 1.1 | |
-| Membership-inferred ML (ARF) | 20 | 97.0 ± 2.0 | 97.0 ± 2.0 | 51.3 ± 2.1 (membership accuracy (50 = guess)) | 0.0 ± 0.0 | |
-| Inverted ML (ARF) | 2000 | 97.0 ± 2.0 | 97.0 ± 2.0 | 70.5 ± 3.3 (cosine to class mean (×100)) | 0.0 ± 0.0 | |
-| Clean FL | none | 97.4 ± 1.4 | 97.4 ± 1.4 | — | 0.0 ± 0.0 | |
-| Malicious FL, label flip | 0.5 | 97.4 ± 1.4 | 52.5 ± 7.6 | — undefined (D10) | 44.9 ± 8.5 | |
-| Malicious FL, sign flip | 0.5 | 97.4 ± 1.4 | 27.0 ± 16.7 | — undefined (D10) | 70.4 ± 17.3 | |
-| Malicious FL, targeted flip | 0.5 | 97.4 ± 1.4 | 78.2 ± 2.4 | 59.0 ± 6.6 (source rows → target class) | 19.1 ± 2.9 | |
-| Backdoored FL (ARF) | 0.5 | 97.4 ± 1.4 | 89.5 ± 2.6 | 91.9 ± 6.0 (triggered rows → target class) | 7.9 ± 2.5 | |
-| Clean QML | none | 92.3 ± 1.4 | 92.3 ± 1.4 | — | 0.0 ± 0.0 | |
-| Tampered QML | 16 | 92.3 ± 1.4 | 42.6 ± 27.9 | 57.9 ± 29.2 (correct → wrong) | 49.6 ± 29.0 | |
-| Shot-biased QML | 0.4 | 92.3 ± 1.4 | 63.2 ± 0.0 | 35.0 ± 2.4 (correct → wrong) | 29.1 ± 1.4 | |
-| Noisy QML | 0.1 | 92.3 ± 1.4 | 75.1 ± 2.9 | 23.4 ± 2.4 (correct → wrong) | 17.2 ± 3.3 | |
-| Transpiler drift QML (QTF · TSV) | 0.8 | 92.3 ± 1.4 | 56.1 ± 9.5 | 43.0 ± 11.8 (correct → wrong) | 36.1 ± 9.1 | |
-| Transpiler swap QML (QTF · TSV) | 4 | 92.3 ± 1.4 | 42.5 ± 13.8 | 58.2 ± 14.4 (correct → wrong) | 49.8 ± 13.4 | |
-| Backdoored QML (ARF) | 0.2 | 92.3 ± 1.4 | 76.7 ± 6.9 | 81.9 ± 10.6 (triggered rows → target class) | 15.6 ± 7.3 | |
-| Stolen QML (ARF) | 1000 | 92.3 ± 1.4 | 94.2 ± 2.0 | 94.2 ± 1.3 (fidelity of stolen copy) | -1.9 ± 1.1 | |
-| Membership-inferred QML (ARF) | 20 | 92.3 ± 1.4 | 92.3 ± 1.4 | 52.2 ± 2.0 (membership accuracy (50 = guess)) | 0.0 ± 0.0 | |
-| Inverted QML (ARF) | 2000 | 92.3 ± 1.4 | 92.3 ± 1.4 | 65.5 ± 7.9 (cosine to class mean (×100)) | 0.0 ± 0.0 | |
+| Clean ML | none | 97.5 ± 1.5 | 97.5 ± 1.5 | — | 0.0 ± 0.0 | |
+| Poisoned ML | 0.4 | 97.5 ± 1.5 | 76.7 ± 5.3 | — undefined (D10) | 20.9 ± 5.4 | |
+| Targeted-poisoned ML | 0.4 | 97.5 ± 1.5 | 81.6 ± 2.4 | 49.9 ± 6.4 (source rows → target class) | 16.0 ± 2.4 | |
+| Evaded ML | 1 | 97.5 ± 1.5 | 6.3 ± 2.0 | 93.6 ± 2.0 (correct → wrong) | 91.3 ± 1.9 | |
+| Backdoored ML (ARF) | 0.2 | 97.5 ± 1.5 | 90.7 ± 2.3 | 91.7 ± 5.3 (triggered rows → target class) | 6.8 ± 2.1 | |
+| Stolen ML (ARF) | 1000 | 97.5 ± 1.5 | 97.6 ± 1.6 | 99.3 ± 0.7 (fidelity of stolen copy) | -0.0 ± 0.7 | |
+| Membership-inferred ML (ARF) | 20 | 97.5 ± 1.5 | 97.5 ± 1.5 | 51.5 ± 2.5 (membership accuracy (50 = guess)) | 0.0 ± 0.0 | |
+| Inverted ML (ARF) | 2000 | 97.5 ± 1.5 | 97.5 ± 1.5 | 71.7 ± 4.2 (cosine to class mean (×100)) | 0.0 ± 0.0 | |
+| Clean FL | none | 97.5 ± 1.3 | 97.5 ± 1.3 | — | 0.0 ± 0.0 | |
+| Malicious FL, label flip | 0.5 | 97.5 ± 1.3 | 49.4 ± 13.9 | — undefined (D10) | 48.2 ± 13.9 | |
+| Malicious FL, sign flip | 0.5 | 97.5 ± 1.3 | 24.7 ± 16.0 | — undefined (D10) | 72.8 ± 16.3 | |
+| Malicious FL, targeted flip | 0.5 | 97.5 ± 1.3 | 77.4 ± 2.8 | 61.4 ± 7.7 (source rows → target class) | 20.2 ± 3.0 | |
+| Backdoored FL (ARF) | 0.5 | 97.5 ± 1.3 | 88.8 ± 1.8 | 87.7 ± 5.1 (triggered rows → target class) | 8.7 ± 1.7 | |
+| Clean QML | none | 91.7 ± 4.2 | 91.7 ± 4.2 | — | 0.0 ± 0.0 | |
+| Tampered QML | 16 | 91.7 ± 4.2 | 38.5 ± 18.2 | 63.0 ± 19.1 (correct → wrong) | 53.2 ± 18.2 | |
+| Shot-biased QML | 0.4 | 91.7 ± 4.2 | 63.2 ± 0.0 | 35.6 ± 3.6 (correct → wrong) | 28.5 ± 4.2 | |
+| Noisy QML | 0.1 | 91.7 ± 4.2 | 74.5 ± 11.2 | 22.8 ± 10.1 (correct → wrong) | 17.2 ± 9.8 | |
+| Transpiler drift QML (QTF · TSV) | 0.8 | 91.7 ± 4.2 | 45.5 ± 14.7 | 54.9 ± 17.0 (correct → wrong) | 46.2 ± 15.2 | |
+| Transpiler swap QML (QTF · TSV) | 4 | 91.7 ± 4.2 | 54.3 ± 22.6 | 44.3 ± 25.0 (correct → wrong) | 37.3 ± 21.7 | |
+| Backdoored QML (ARF) | 0.2 | 91.7 ± 4.2 | 77.6 ± 5.7 | 84.2 ± 9.2 (triggered rows → target class) | 14.0 ± 6.1 | |
+| Stolen QML (ARF) | 1000 | 91.7 ± 4.2 | 94.1 ± 3.2 | 94.5 ± 3.0 (fidelity of stolen copy) | -2.4 ± 2.6 | |
+| Membership-inferred QML (ARF) | 20 | 91.7 ± 4.2 | 91.7 ± 4.2 | 49.9 ± 2.7 (membership accuracy (50 = guess)) | 0.0 ± 0.0 | |
+| Inverted QML (ARF) | 2000 | 91.7 ± 4.2 | 91.7 ± 4.2 | 72.2 ± 7.3 (cosine to class mean (×100)) | 0.0 ± 0.0 | |
 
 Clean QML is the project lead's QuantumNet circuit trained with Adam; QML drops are against it, not against logistic regression. FL clean accuracy is FedAvg with 0 malicious clients, not the centralised model. Stolen rows: attacked accuracy is the stolen copy's accuracy. Membership and inversion rows leave the model untouched (drop 0); their attack success is the attack's own score (METHODS D47, D48).
